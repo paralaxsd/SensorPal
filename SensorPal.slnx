@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/SensorPal.Mobile/SensorPal.Mobile.csproj" Id="2064884c-2f6c-4cfc-8874-16d789a1299f" />
+    <Project Path="src/SensorPal.Server/SensorPal.Server.csproj" />
+  </Folder>
+</Solution>
