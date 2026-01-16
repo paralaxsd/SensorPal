@@ -1,57 +1,40 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Text.Json.Serialization;
+using Scalar.AspNetCore;
 
-namespace SensorPal.Server
+namespace SensorPal.Server;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateSlimBuilder(args);
+
+        builder.Services.ConfigureHttpJsonOptions(options =>
         {
-            var builder = WebApplication.CreateSlimBuilder(args);
+            options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+        });
 
-            builder.Services.ConfigureHttpJsonOptions(options =>
-            {
-                options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
-            });
+        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+        builder.Services.AddOpenApi();
 
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+        var app = builder.Build();
 
-            var app = builder.Build();
-
-            if (app.Environment.IsDevelopment())
-            {
-                app.MapOpenApi();
-            }
-
-            Todo[] sampleTodos =
-            [
-                new(1, "Walk the dog"),
-                new(2, "Do the dishes", DateOnly.FromDateTime(DateTime.Now)),
-                new(3, "Do the laundry", DateOnly.FromDateTime(DateTime.Now.AddDays(1))),
-                new(4, "Clean the bathroom"),
-                new(5, "Clean the car", DateOnly.FromDateTime(DateTime.Now.AddDays(2)))
-            ];
-
-            var todosApi = app.MapGroup("/todos");
-            todosApi.MapGet("/", () => sampleTodos)
-                    .WithName("GetTodos");
-
-            todosApi.MapGet("/{id}", Results<Ok<Todo>, NotFound> (int id) =>
-                sampleTodos.FirstOrDefault(a => a.Id == id) is { } todo
-                    ? TypedResults.Ok(todo)
-                    : TypedResults.NotFound())
-                .WithName("GetTodoById");
-
-            app.Run();
+        if (app.Environment.IsDevelopment())
+        {
+            app.MapOpenApi();
+            app.MapScalarApiReference();
         }
-    }
 
-    public record Todo(int Id, string? Title, DateOnly? DueBy = null, bool IsComplete = false);
+        var startedAt = DateTimeOffset.Now;
+        app.MapGet("/status", () => new StatusDto
+        {
+            Name = "SensorPal",
+            StartedAt = startedAt,
+            Now = DateTimeOffset.Now,
+            Mode = "Idle"
+        });
 
-    [JsonSerializable(typeof(Todo[]))]
-    internal partial class AppJsonSerializerContext : JsonSerializerContext
-    {
-
+        app.Run();
     }
 }

@@ -5,8 +5,8 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "launchUrl": "todos",
-      "applicationUrl": "http://localhost:5194",
+      "launchUrl": "scalar",
+      "applicationUrl": "http://0.0.0.0:50194",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

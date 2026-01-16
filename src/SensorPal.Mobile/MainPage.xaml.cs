@@ -1,24 +1,42 @@
-﻿namespace SensorPal.Mobile
+﻿using SensorPal.Mobile.Infrastructure;
+
+namespace SensorPal.Mobile;
+
+public partial class MainPage : ContentPage
 {
-    public partial class MainPage : ContentPage
+    int count = 0;
+    readonly SensorPalClient _client;
+
+    public MainPage(SensorPalClient client)
     {
-        int count = 0;
+        _client = client;
 
-        public MainPage()
+        InitializeComponent();
+        _ = UpdateStatusAsync();
+    }
+
+    async void OnCounterClicked(object? sender, EventArgs e)
+    {
+        count++;
+        CounterBtn.Text = count == 1 ? $"Clicked {count} time" : $"Clicked {count} times";
+        SemanticScreenReader.Announce(CounterBtn.Text);
+
+        await UpdateStatusAsync();
+    }
+
+    async Task UpdateStatusAsync()
+    {
+        try
         {
-            InitializeComponent();
+            var status = await _client.GetStatusAsync();
+
+            StatusLabel.Text = $"🟢 {status}";
+            StatusLabel.TextColor = Colors.Green;
         }
-
-        private void OnCounterClicked(object? sender, EventArgs e)
+        catch
         {
-            count++;
-
-            if (count == 1)
-                CounterBtn.Text = $"Clicked {count} time";
-            else
-                CounterBtn.Text = $"Clicked {count} times";
-
-            SemanticScreenReader.Announce(CounterBtn.Text);
+            StatusLabel.Text = "🔴 offline";
+            StatusLabel.TextColor = Colors.Red;
         }
     }
 }

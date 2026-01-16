@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Server + Mobile",
+    "Projects": [
+      {
+        "Path": "src\\SensorPal.Server\\SensorPal.Server.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "src\\SensorPal.Mobile\\SensorPal.Mobile.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

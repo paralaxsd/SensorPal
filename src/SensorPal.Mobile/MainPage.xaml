@@ -24,6 +24,13 @@
                 SemanticProperties.HeadingLevel="Level2"
                 SemanticProperties.Description="Welcome to dot net Multi platform App U I" />
 
+            <Label
+                x:Name="StatusLabel"
+                Text="Status: unknown"
+                FontSize="14"
+                FontAttributes="Bold"
+                TextColor="Gray" />
+
             <Button
                 x:Name="CounterBtn"
                 Text="Click me" 
