@@ -66,6 +66,9 @@
     <EmbeddedResource Include="appsettings.Android.json">
       <DependentUpon>appsettings.json</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="appsettings.Android.Emulator.json">
+      <DependentUpon>appsettings.json</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="appsettings.Windows.json">
       <DependentUpon>appsettings.json</DependentUpon>
     </EmbeddedResource>

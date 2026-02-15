@@ -41,13 +41,18 @@ public static class MauiProgram
         if (OperatingSystem.IsWindows())
             AddSettingsConfigFor(builder, "appsettings.Windows.json");
         else if (OperatingSystem.IsAndroid())
+        {
             AddSettingsConfigFor(builder, "appsettings.Android.json");
+            if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
+                AddSettingsConfigFor(builder, "appsettings.Android.Emulator.json");
+        }
     }
 
     static void AddSettingsConfigFor(MauiAppBuilder builder, string resourceName)
     {
         var a = Assembly.GetExecutingAssembly();
-        using var stream = a.GetManifestResourceStream("SensorPal.Mobile." + resourceName).NotNull();
+        using var stream = a.GetManifestResourceStream("SensorPal.Mobile." + resourceName);
+        if (stream is null) return;
 
         var config = new ConfigurationBuilder()
             .AddJsonStream(stream)
