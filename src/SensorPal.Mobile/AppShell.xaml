@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<Shell
-    x:Class="SensorPal.Mobile.AppShell"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:SensorPal.Mobile"
-    Title="SensorPal.Mobile">
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:pages="clr-namespace:SensorPal.Mobile.Pages"
+       x:Class="SensorPal.Mobile.AppShell"
+       Title="SensorPal">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <TabBar>
+        <ShellContent Title="Monitoring"
+                      ContentTemplate="{DataTemplate pages:MonitoringPage}"
+                      Route="MonitoringPage" />
+        <ShellContent Title="Events"
+                      ContentTemplate="{DataTemplate pages:EventsPage}"
+                      Route="EventsPage" />
+    </TabBar>
 
 </Shell>

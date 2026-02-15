@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:conv="clr-namespace:SensorPal.Mobile.Converters"
+             x:Class="SensorPal.Mobile.Pages.MonitoringPage"
+             Title="Monitoring">
+
+    <ContentPage.Resources>
+        <conv:BoolToStringConverter x:Key="BoolToActiveLabel" TrueValue="● Active" FalseValue="Done" />
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="24">
+
+            <!-- Status indicator -->
+            <Label x:Name="StatusLabel"
+                   Text="● Idle"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <!-- Toggle button -->
+            <Button x:Name="ToggleButton"
+                    Text="Start Monitoring"
+                    FontSize="20"
+                    HeightRequest="64"
+                    Clicked="OnToggleClicked" />
+
+            <!-- Live stats (shown only when monitoring) -->
+            <VerticalStackLayout x:Name="LiveStatsPanel"
+                                 IsVisible="False"
+                                 Spacing="8">
+                <Label Text="Current Session" FontAttributes="Bold" FontSize="16" />
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="16" RowSpacing="8">
+                    <Label Grid.Row="0" Grid.Column="0" Text="Duration" TextColor="Gray" />
+                    <Label Grid.Row="0" Grid.Column="1" x:Name="DurationLabel" Text="—" />
+                    <Label Grid.Row="1" Grid.Column="0" Text="Events detected" TextColor="Gray" />
+                    <Label Grid.Row="1" Grid.Column="1" x:Name="EventCountLabel" Text="—" />
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Past sessions -->
+            <Label Text="Recent Sessions" FontAttributes="Bold" FontSize="16" />
+            <CollectionView x:Name="SessionsView"
+                            SelectionMode="None"
+                            EmptyView="No sessions yet.">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="0,8" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0">
+                                <Label Text="{Binding StartedAt, StringFormat='{0:dd.MM.yyyy HH:mm}'}"
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding EventCount, StringFormat='{0} event(s)'}"
+                                       TextColor="Gray" FontSize="13" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1"
+                                   Text="{Binding IsActive, Converter={StaticResource BoolToActiveLabel}}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

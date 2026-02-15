@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Plugin.Maui.Audio;
 using SensorPal.Mobile.Infrastructure;
+using SensorPal.Mobile.Pages;
 using SensorPal.Shared.Extensions;
 using System.Reflection;
 
@@ -17,6 +19,7 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
+            .AddAudio()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -36,13 +39,9 @@ public static class MauiProgram
     {
         AddSettingsConfigFor(builder, "appsettings.json");
         if (OperatingSystem.IsWindows())
-        {
             AddSettingsConfigFor(builder, "appsettings.Windows.json");
-        }
         else if (OperatingSystem.IsAndroid())
-        {
             AddSettingsConfigFor(builder, "appsettings.Android.json");
-        }
     }
 
     static void AddSettingsConfigFor(MauiAppBuilder builder, string resourceName)
@@ -66,5 +65,7 @@ public static class MauiProgram
     {
         builder.Services.AddTransient<MainPage>();
         builder.Services.AddTransient<SensorPalClient>();
+        builder.Services.AddTransient<MonitoringPage>();
+        builder.Services.AddTransient<EventsPage>();
     }
 }

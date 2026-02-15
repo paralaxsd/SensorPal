@@ -4,6 +4,7 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
+    <File Path="CLAUDE.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SensorPal.Mobile/SensorPal.Mobile.csproj" Id="2064884c-2f6c-4cfc-8874-16d789a1299f">

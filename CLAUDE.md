@@ -1,0 +1,63 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Build & Run
+
+```bash
+# Build the entire solution
+dotnet build SensorPal.slnx
+
+# Run the server (ASP.NET Core, targets net10.0-windows due to NAudio/WASAPI)
+dotnet run --project src/SensorPal.Server
+
+# Run the MAUI app targeting Windows
+dotnet run --project src/SensorPal.Mobile -f net10.0-windows10.0.19041.0
+
+# Deploy to a connected Android device (USB debugging enabled)
+dotnet build -t:Install -f net10.0-android src/SensorPal.Mobile/SensorPal.Mobile.csproj -c Debug
+
+# Create EF Core migration after schema changes
+dotnet ef migrations add <MigrationName> --project src/SensorPal.Server
+
+# Run tests (none currently exist)
+dotnet test SensorPal.slnx
+```
+
+The solution uses `.slnx` format (the new XML-based solution file format introduced in .NET 9/10).
+
+## Architecture
+
+Three projects in `src/`:
+
+- **SensorPal.Server** — ASP.NET Core Web API (targets `net10.0-windows` for NAudio WASAPI). Runs as a long-lived server on the Windows PC with the audio interface. Core services:
+  - `MonitoringStateService` — simple state machine (`Idle` ↔ `Monitoring`), manually toggled via API
+  - `AudioCaptureService` (IHostedService) — captures from the Focusrite Scarlett via WASAPI (`NAudio.CoreAudioApi.WasapiCapture`); dual recording: background MP3 (compressed, continuous) + WAV clips around noise events with pre-roll buffer
+  - `NoiseDetector` — RMS amplitude threshold detection in dBFS with debounce
+  - `CircularAudioBuffer` — thread-safe ring buffer for pre-roll audio
+  - SQLite via EF Core (`SensorPalDbContext`) — stores `MonitoringSession` and `NoiseEvent` entities; DB at `AudioConfig:StoragePath/sensorpal.db`
+  - JSON serialization: source-generated `AppJsonSerializerContext` (non-AOT now but kept for consistency); add new DTO types there when adding endpoints
+  - API docs via Scalar at `/scalar/v1` in Development
+
+- **SensorPal.Mobile** — .NET MAUI app targeting Android, iOS, macCatalyst, and Windows. Two tabs: **Monitoring** (start/stop, live session stats, session history) and **Events** (browse noise events by date, play back audio clips). `SensorPalClient` (in `Infrastructure/`) handles all HTTP communication. Platform-specific server URLs are set in embedded `appsettings.{Platform}.json` files — for a real Android device, update `appsettings.Android.json` with the PC's LAN IP. Audio playback via `Plugin.Maui.Audio`.
+
+- **SensorPal.Shared** — Class library. Contains `NullabilityExtensions` (`.NotNull<T>()`) and shared DTOs in `Models/` (`NoiseEventDto`, `MonitoringSessionDto`, `LiveSessionStatsDto`).
+
+### Key wiring points
+- `AudioConfig:DeviceName` — empty string = use system default capture device. Set the actual device name via user secrets: `dotnet user-secrets set "AudioConfig:DeviceName" "Focusrite USB Audio" --project src/SensorPal.Server`. Enumerate available devices via `GET /audio/devices`.
+- `AudioConfig:NoiseThresholdDb` (dBFS, e.g. `-30.0`) is the primary tuning knob — adjust empirically.
+- `AudioConfig:StoragePath` — relative paths are resolved from the server executable directory (`AppContext.BaseDirectory`). Default is `recordings` (i.e. alongside the binary). The directory and SQLite DB are auto-created on startup.
+- `ServerConfig:BaseUrl` drives the mobile → server connection; update `appsettings.Android.json` with the PC's LAN IP for physical device use.
+- NAudio WASAPI types are in `NAudio.CoreAudioApi` (not `NAudio.Wave`) — requires the `NAudio.Wasapi` NuGet package separately from `NAudio`.
+- New EF Core schema changes require a migration: `dotnet ef migrations add <Name> --project src/SensorPal.Server`.
+
+## C# Style (from Copilot instructions)
+
+- **Prefer conciseness**: `var`, expression-bodied members, file-scoped namespaces, primary constructors, pattern matching, collection expressions.
+- **Visibility**: omit `private`; omit `internal` for nested types. Use `sealed` by default.
+- **Member order**: fields → properties → constructors → methods; sorted public → internal → protected → private within each group; static members after all instance members. Fields: `_camelCase`; static/protected fields: `PascalCase`.
+- **Prefer records** where appropriate; **prefer extension types** for utility helpers.
+- **Minimize negations** in conditionals; prefer early returns.
+- **Prefer functional expressions** (LINQ, etc.) over loops where readable.
+- Max line length: **100 characters**.
+- Use **strategic blank lines** to separate logical blocks, error handling, and return statements.

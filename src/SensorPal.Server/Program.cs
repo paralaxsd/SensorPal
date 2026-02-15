@@ -1,24 +1,37 @@
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using SensorPal.Server.Configuration;
+using SensorPal.Server.Endpoints;
+using SensorPal.Server.Services;
+using SensorPal.Server.Storage;
 
 namespace SensorPal.Server;
 
-public class Program
+static class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
-        var builder = WebApplication.CreateSlimBuilder(args);
+        var builder = WebApplication.CreateBuilder(args);
+        builder.PrepareServices();
 
-        builder.Services.ConfigureHttpJsonOptions(options =>
-        {
-            options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
-        });
+        var app = await builder.BuildApplicationAsync();
+        await app.RunAsync();
+    }
 
-        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-        builder.Services.AddOpenApi();
+    static void PrepareServices(this WebApplicationBuilder builder)
+    {
+        var services = builder.Services;
+        var configuration = builder.Configuration;
 
+        var rawStoragePath = ConfigureServices(services, configuration);
+        AddServices(services, rawStoragePath);
+    }
+
+    static async Task<WebApplication> BuildApplicationAsync(this WebApplicationBuilder builder)
+    {
         var app = builder.Build();
+
+        await EnsureAndMigrateDbAsync(app);
 
         if (app.Environment.IsDevelopment())
         {
@@ -26,15 +39,54 @@ public class Program
             app.MapScalarApiReference();
         }
 
-        var startedAt = DateTimeOffset.Now;
-        app.MapGet("/status", () => new StatusDto
-        {
-            Name = "SensorPal",
-            StartedAt = startedAt,
-            Now = DateTimeOffset.Now,
-            Mode = "Idle"
-        });
+        app.MapEndpoints();
+        return app;
+    }
 
-        app.Run();
+    static string ConfigureServices(IServiceCollection services, ConfigurationManager configuration)
+    {
+        services.ConfigureHttpJsonOptions(options =>
+            options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default));
+
+        var audioConfigSection = configuration.GetRequiredSection(nameof(AudioConfig));
+        services.Configure<AudioConfig>(audioConfigSection);
+
+        var rawStoragePath = audioConfigSection["StoragePath"] ?? "recordings";
+        return rawStoragePath;
+    }
+
+    static void AddServices(IServiceCollection services, string rawStoragePath)
+    {
+        services.AddOpenApi();
+
+        // Storage — AudioStorage resolves relative paths from AppContext.BaseDirectory
+        var audioStorage = new AudioStorage(rawStoragePath);
+        services.AddSingleton(audioStorage);
+        services.AddDbContextFactory<SensorPalDbContext>(o =>
+            o.UseSqlite($"Data Source={audioStorage.DatabasePath}"));
+
+        // Repositories
+        services.AddSingleton<SessionRepository>();
+        services.AddSingleton<EventRepository>();
+
+        // Core services
+        services.AddSingleton<MonitoringStateService>();
+        services.AddHostedService<AudioCaptureService>();
+    }
+
+    static async Task EnsureAndMigrateDbAsync(WebApplication app)
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SensorPalDbContext>>();
+        await using var ctx = await db.CreateDbContextAsync();
+        await ctx.Database.MigrateAsync();
+    }
+
+    static void MapEndpoints(this WebApplication app)
+    {
+        app.MapStatusEndpoints();
+        app.MapMonitoringEndpoints();
+        app.MapAudioDeviceEndpoints();
+        app.MapEventEndpoints();
     }
 }

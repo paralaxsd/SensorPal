@@ -1,0 +1,51 @@
+using Microsoft.EntityFrameworkCore;
+using SensorPal.Server.Entities;
+
+namespace SensorPal.Server.Storage;
+
+sealed class SessionRepository(IDbContextFactory<SensorPalDbContext> factory)
+{
+    public async Task<long> StartSessionAsync(string backgroundFile)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var session = new MonitoringSession
+        {
+            StartedAt = DateTime.UtcNow,
+            BackgroundFile = backgroundFile
+        };
+        db.MonitoringSessions.Add(session);
+        await db.SaveChangesAsync();
+        return session.Id;
+    }
+
+    public async Task EndSessionAsync(long sessionId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        await db.MonitoringSessions
+            .Where(s => s.Id == sessionId)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.EndedAt, DateTime.UtcNow));
+    }
+
+    public async Task IncrementEventCountAsync(long sessionId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        await db.MonitoringSessions
+            .Where(s => s.Id == sessionId)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.EventCount, x => x.EventCount + 1));
+    }
+
+    public async Task<IReadOnlyList<MonitoringSession>> GetSessionsAsync()
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.MonitoringSessions
+            .OrderByDescending(s => s.Id)
+            .Take(20)
+            .ToListAsync();
+    }
+
+    public async Task<MonitoringSession?> GetCurrentSessionAsync(long sessionId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.MonitoringSessions.FindAsync(sessionId);
+    }
+}
