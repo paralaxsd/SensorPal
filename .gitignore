@@ -3,3 +3,4 @@
 **/obj/
 *.user
 .claude/settings.local.json
+.nuke/temp/

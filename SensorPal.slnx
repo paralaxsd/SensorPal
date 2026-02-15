@@ -1,16 +1,25 @@
 <Solution>
-  <Folder Name="/.github/">
+  <Folder Name="/00 Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="build.cmd" />
+    <File Path="build.ps1" />
+    <File Path="build.sh" />
+    <File Path="CLAUDE.md" />
+    <File Path="dotnet-tools.json" />
+  </Folder>
+  <Folder Name="/00 Solution Items/.github/">
     <File Path=".github/copilot-instructions.md" />
   </Folder>
-  <Folder Name="/Solution Items/">
-    <File Path=".gitignore" />
-    <File Path="CLAUDE.md" />
-  </Folder>
-  <Folder Name="/src/">
+  <Folder Name="/01 src/">
     <Project Path="src/SensorPal.Mobile/SensorPal.Mobile.csproj" Id="2064884c-2f6c-4cfc-8874-16d789a1299f">
-      <Deploy Solution="Debug|*" />
+      <Deploy />
     </Project>
     <Project Path="src/SensorPal.Server/SensorPal.Server.csproj" />
     <Project Path="src/SensorPal.Shared/SensorPal.Shared.csproj" Id="bd21f87b-f35a-45f3-84db-a97560d9ccc8" />
+  </Folder>
+  <Folder Name="/02 build/">
+    <Project Path="build/SensorPal.Build.csproj">
+      <Build Project="false" />
+    </Project>
   </Folder>
 </Solution>

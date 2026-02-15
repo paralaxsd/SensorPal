@@ -51,6 +51,37 @@ Three projects in `src/`:
 - NAudio WASAPI types are in `NAudio.CoreAudioApi` (not `NAudio.Wave`) — requires the `NAudio.Wasapi` NuGet package separately from `NAudio`.
 - New EF Core schema changes require a migration: `dotnet ef migrations add <Name> --project src/SensorPal.Server`.
 
+## Nuke Build
+
+The solution uses [Nuke](https://nuke.build) as its build automation tool. The build project lives in `build/SensorPal.Build.csproj` and is invoked via the bootstrapper scripts in the repo root. No global Nuke installation required — just a working .NET SDK.
+
+```powershell
+# Windows (PowerShell)
+.\build.ps1               # default target: Compile (runs Restore → Compile)
+.\build.ps1 Clean
+.\build.ps1 Test
+.\build.ps1 DeployAndroid # builds APK and installs on a connected Android device via ADB
+```
+
+```bash
+# Linux/macOS/Git Bash
+./build.sh
+./build.sh Clean
+./build.sh Test
+./build.sh DeployAndroid
+```
+
+Pass `--configuration Release` to override the default (`Debug` for local builds):
+
+```powershell
+.\build.ps1 DeployAndroid --configuration Release
+```
+
+**Notes:**
+- `DeployAndroid` requires a physical Android device connected via USB with USB debugging enabled. ADB is resolved automatically through the Android SDK that Visual Studio installs.
+- The build project targets `net10.0` because `Nuke.Common` 10.x ships only a `net10.0` lib. Do not downgrade this TFM.
+- `.nuke/temp/` contains ephemeral build logs — excluded from source control.
+
 ## C# Style (from Copilot instructions)
 
 - **Prefer conciseness**: `var`, expression-bodied members, file-scoped namespaces, primary constructors, pattern matching, collection expressions.
