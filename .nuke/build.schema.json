@@ -109,6 +109,10 @@
             "Debug",
             "Release"
           ]
+        },
+        "DeviceId": {
+          "type": "string",
+          "description": "Android device id for deployment (use 'adb devices' to list)"
         }
       }
     },

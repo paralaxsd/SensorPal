@@ -4,19 +4,20 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-class Build : NukeBuild
+sealed class Build : NukeBuild
 {
-    /// Support plugins are available for:
-    ///   - JetBrains ReSharper        https://nuke.build/resharper
-    ///   - JetBrains Rider            https://nuke.build/rider
-    ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
-    ///   - Microsoft VSCode           https://nuke.build/vscode
-
-    public static int Main() => Execute<Build>(x => x.Compile);
-
+    /******************************************************************************************
+     * FIELDS
+     * ***************************************************************************************/
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
+    [Parameter("Android device id for deployment (use 'adb devices' to list)")]
+    readonly string DeviceId;
+
+    /******************************************************************************************
+     * PROPERTIES
+     * ***************************************************************************************/
     AbsolutePath SolutionFile => RootDirectory / "SensorPal.slnx";
     AbsolutePath MobileProject => RootDirectory / "src" / "SensorPal.Mobile" / "SensorPal.Mobile.csproj";
 
@@ -46,6 +47,15 @@ class Build : NukeBuild
             .EnableNoBuild()));
 
     Target DeployAndroid => _ => _
-        .Executes(() => DotNet(
-            $"build {MobileProject} -t:Install -f net10.0-android -c {Configuration}"));
+        .Executes(() =>
+        {
+            var deviceArg = string.IsNullOrWhiteSpace(DeviceId) ? 
+                "" : $" --device-id {DeviceId}";
+            DotNet($"build {MobileProject} -t:Install -f net10.0-android -c {Configuration}{deviceArg}");
+        });
+
+    /******************************************************************************************
+     * METHODS
+     * ***************************************************************************************/
+    public static int Main() => Execute<Build>(x => x.Compile);
 }
