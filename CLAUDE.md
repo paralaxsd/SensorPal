@@ -39,7 +39,7 @@ Three projects in `src/`:
   - JSON serialization: source-generated `AppJsonSerializerContext` (non-AOT now but kept for consistency); add new DTO types there when adding endpoints
   - API docs via Scalar at `/scalar/v1` in Development
 
-- **SensorPal.Mobile** — .NET MAUI app targeting Android, iOS, macCatalyst, and Windows. Two tabs: **Monitoring** (start/stop, live session stats, session history) and **Events** (browse noise events by date, play back audio clips). `SensorPalClient` (in `Infrastructure/`) handles all HTTP communication. Platform-specific server URLs are set in embedded `appsettings.{Platform}.json` files — for a real Android device, update `appsettings.Android.json` with the PC's LAN IP. Audio playback via `Plugin.Maui.Audio`.
+- **SensorPal.Mobile** — .NET MAUI app targeting Android, iOS, macCatalyst, and Windows. Three tabs: **Monitoring** (start/stop, live session stats, session history), **Events** (browse noise events by date, play back audio clips), and **Logs** (live in-app log viewer). `ConnectivityService` (singleton) pings the server periodically and shows an offline dialog via `AppShell`. `SensorPalClient` (in `Infrastructure/`) handles all HTTP communication. Platform-specific server URLs are set in embedded `appsettings.{Platform}.json` files — for a real Android device, update `appsettings.Android.json` with the PC's LAN IP. Audio playback via `Plugin.Maui.Audio`.
 
 - **SensorPal.Shared** — Class library. Contains `NullabilityExtensions` (`.NotNull<T>()`) and shared DTOs in `Models/` (`NoiseEventDto`, `MonitoringSessionDto`, `LiveSessionStatsDto`).
 
@@ -92,3 +92,13 @@ Pass `--configuration Release` to override the default (`Debug` for local builds
 - **Prefer functional expressions** (LINQ, etc.) over loops where readable.
 - Max line length: **100 characters**.
 - Use **strategic blank lines** to separate logical blocks, error handling, and return statements.
+
+## MAUI Gotchas
+
+- **`DisplayAlertAsync` on Shell**: Requires the Shell to be window-attached. Start background services from `OnAppearing()` (with a `_started` guard), not the constructor — otherwise the dialog silently returns `false` before the window is ready.
+- **App quit on Android**: `Application.Current?.Quit()` doesn't reliably kill the process. Use `Environment.Exit(0)`.
+- **Splash screen `BaseSize` on Android 12+**: Has no effect on visual icon size — Android constrains it to ~240dp regardless. Only the background `Color` fills the screen.
+- **System font names in `FontFamily`**: Names like `"Courier New"` require the font to be registered as a `<MauiFont>` asset. Omit `FontFamily` and let Grid column widths handle alignment instead.
+- **DI accessibility**: Top-level service classes injected into `public` constructors must themselves be `public` (C# CS0051).
+- **`AppShell` in DI**: Register as singleton; `App` receives it via constructor injection because `UseMauiApp<App>()` registers `App` in DI automatically.
+- **`InMemoryLoggerProvider` pattern**: Create the store before `builder.Build()`, share via `builder.Services.AddSingleton(logStore)` + `builder.Logging.AddProvider(new InMemoryLoggerProvider(logStore))`.
