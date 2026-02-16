@@ -32,6 +32,12 @@ public sealed class SensorPalClient(
         return list ?? [];
     }
 
+    public async Task<LiveLevelDto?> GetLevelAsync()
+    {
+        try { return await _http.GetFromJsonAsync<LiveLevelDto>($"{_base}/monitoring/level"); }
+        catch { return null; }
+    }
+
     public string GetEventAudioUrl(long eventId)
         => $"{_base}/events/{eventId}/audio";
 

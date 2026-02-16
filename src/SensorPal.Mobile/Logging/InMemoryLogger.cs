@@ -35,21 +35,41 @@ public sealed class InMemoryLogStore
     }
 }
 
-sealed class InMemoryLoggerProvider(InMemoryLogStore store) : ILoggerProvider
+
+sealed class InMemoryLoggerProvider : ILoggerProvider
 {
-    public ILogger CreateLogger(string categoryName) => new InMemoryLogger(store, categoryName);
+    readonly InMemoryLogStore _store;
+    readonly LogLevel _minLevel;
+
+    public InMemoryLoggerProvider(InMemoryLogStore store, LogLevel minLevel = LogLevel.Information)
+    {
+        _store = store;
+        _minLevel = minLevel;
+    }
+
+    public ILogger CreateLogger(string categoryName) => new InMemoryLogger(_store, categoryName, _minLevel);
     public void Dispose() { }
 }
 
-sealed class InMemoryLogger(InMemoryLogStore store, string category) : ILogger
+
+sealed class InMemoryLogger : ILogger
 {
-    readonly string _shortCategory = category.Contains('.')
-        ? category[(category.LastIndexOf('.') + 1)..]
-        : category;
+    readonly InMemoryLogStore _store;
+    readonly string _shortCategory;
+    readonly LogLevel _minLevel;
+
+    public InMemoryLogger(InMemoryLogStore store, string category, LogLevel minLevel)
+    {
+        _store = store;
+        _shortCategory = category.Contains('.')
+            ? category[(category.LastIndexOf('.') + 1)..]
+            : category;
+        _minLevel = minLevel;
+    }
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
-    public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
+    public bool IsEnabled(LogLevel logLevel) => logLevel >= _minLevel;
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
         Exception? exception, Func<TState, Exception?, string> formatter)
@@ -58,6 +78,6 @@ sealed class InMemoryLogger(InMemoryLogStore store, string category) : ILogger
         var message = formatter(state, exception);
         if (exception is not null)
             message = $"{message}: {exception.Message}";
-        store.Add(new LogEntry(DateTimeOffset.Now, logLevel, _shortCategory, message));
+        _store.Add(new LogEntry(DateTimeOffset.Now, logLevel, _shortCategory, message));
     }
 }

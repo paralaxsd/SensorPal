@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using SensorPal.Server.Configuration;
 using SensorPal.Server.Entities;
 using SensorPal.Server.Services;
 using SensorPal.Server.Storage;
@@ -27,6 +29,9 @@ static class MonitoringEndpoints
             var sessions = await repo.GetSessionsAsync();
             return sessions.Select(ToDto).ToList();
         });
+
+        group.MapGet("/level", (AudioCaptureService capture, IOptions<AudioConfig> options) =>
+            Results.Ok(new LiveLevelDto(capture.CurrentDb, options.Value.NoiseThresholdDb)));
     }
 
     static MonitoringSessionDto ToDto(MonitoringSession s) => new()

@@ -7,21 +7,31 @@ public sealed class ConnectivityService(
     IOptions<ServerConfig> config,
     ILogger<ConnectivityService> logger) : IDisposable
 {
-    static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(60);
-
+    /******************************************************************************************
+     * FIELDS
+     * ***************************************************************************************/
     readonly string _statusUrl = $"{config.Value.BaseUrl}/status";
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(3) };
     CancellationTokenSource? _cts;
     bool _disposed;
 
+    static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(60);
+
+    /******************************************************************************************
+     * PROPERTIES
+     * ***************************************************************************************/
     public bool IsServerReachable { get; private set; } = true;
 
     public event Action<bool>? ConnectivityChanged;
 
+    /******************************************************************************************
+     * METHODS
+     * ***************************************************************************************/
     public void Start()
     {
-        if (_cts is not null) return;
-        _cts = new CancellationTokenSource();
+        if (_cts is { }) { return; }
+
+        _cts = new();
         _ = RunLoopAsync(_cts.Token);
     }
 
@@ -43,6 +53,15 @@ public sealed class ConnectivityService(
     }
 
     public void ReportResult(bool reachable) => UpdateState(reachable);
+
+    public void Dispose()
+    {
+        if (_disposed) { return; }
+        _disposed = true;
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _http.Dispose();
+    }
 
     void UpdateState(bool reachable)
     {
@@ -70,14 +89,5 @@ public sealed class ConnectivityService(
                 await CheckNowAsync();
         }
         catch (OperationCanceledException) { }
-    }
-
-    public void Dispose()
-    {
-        if (_disposed) return;
-        _disposed = true;
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _http.Dispose();
     }
 }

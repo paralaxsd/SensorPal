@@ -40,3 +40,5 @@ sealed class AudioDeviceDto
     public string Name { get; init; } = string.Empty;
     public bool IsDefault { get; init; }
 }
+
+sealed record LiveLevelDto(double? Db, double ThresholdDb);

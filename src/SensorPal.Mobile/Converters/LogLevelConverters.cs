@@ -25,6 +25,7 @@ sealed class LogLevelColorConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         => value is LogLevel level ? level switch
         {
+            LogLevel.Debug => Colors.BlueViolet,
             LogLevel.Warning => Colors.Orange,
             LogLevel.Error or LogLevel.Critical => Colors.OrangeRed,
             _ => Colors.Gray

@@ -26,6 +26,26 @@
                     HeightRequest="64"
                     Clicked="OnToggleClicked" />
 
+            <!-- Input level meter (always visible while page is shown) -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Input Level" TextColor="Gray" FontSize="13" />
+                <Grid ColumnDefinitions="110, *" ColumnSpacing="12" VerticalOptions="Center">
+                    <Label x:Name="LevelLabel"
+                           Grid.Column="0"
+                           Text="— dBFS"
+                           FontSize="20"
+                           FontAttributes="Bold" />
+                    <ProgressBar x:Name="LevelBar"
+                                 Grid.Column="1"
+                                 Progress="0"
+                                 VerticalOptions="Center" />
+                </Grid>
+                <Label x:Name="ThresholdLabel"
+                       Text="Threshold: —"
+                       TextColor="Gray"
+                       FontSize="12" />
+            </VerticalStackLayout>
+
             <!-- Live stats (shown only when monitoring) -->
             <VerticalStackLayout x:Name="LiveStatsPanel"
                                  IsVisible="False"

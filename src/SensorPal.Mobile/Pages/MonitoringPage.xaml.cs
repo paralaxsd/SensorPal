@@ -8,19 +8,35 @@ public partial class MonitoringPage : ContentPage
     readonly SensorPalClient _client;
     bool _isMonitoring;
     IDispatcherTimer? _pollTimer;
+    IDispatcherTimer? _levelTimer;
     int _liveEventCount;
 
     public MonitoringPage(SensorPalClient client)
     {
         _client = client;
         InitializeComponent();
-        _ = LoadSessionsAsync();
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
         _ = LoadSessionsAsync();
+        StartLevelTimer();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        _levelTimer?.Stop();
+        _levelTimer = null;
+    }
+
+    void StartLevelTimer()
+    {
+        _levelTimer = Dispatcher.CreateTimer();
+        _levelTimer.Interval = TimeSpan.FromMilliseconds(500);
+        _levelTimer.Tick += (_, _) => _ = RefreshLevelAsync();
+        _levelTimer.Start();
     }
 
     async void OnToggleClicked(object? sender, EventArgs e)
@@ -78,6 +94,31 @@ public partial class MonitoringPage : ContentPage
             EventCountLabel.Text = active.EventCount.ToString();
         }
         catch { /* silently ignore polling errors */ }
+    }
+
+    async Task RefreshLevelAsync()
+    {
+        var level = await _client.GetLevelAsync();
+
+        if (level?.Db is not { } db)
+        {
+            LevelLabel.Text = "— dBFS";
+            LevelBar.Progress = 0;
+            ThresholdLabel.Text = level is null ? "Threshold: —" : $"Threshold: {level.ThresholdDb:F1} dBFS";
+            return;
+        }
+
+        var aboveThreshold = db >= level.ThresholdDb;
+        var progress = Math.Clamp((db + 60.0) / 60.0, 0.0, 1.0);
+
+        LevelLabel.Text = $"{db:F1} dBFS";
+        if (aboveThreshold)
+            LevelLabel.TextColor = Colors.OrangeRed;
+        else
+            LevelLabel.ClearValue(Label.TextColorProperty);
+        LevelBar.Progress = progress;
+        LevelBar.ProgressColor = aboveThreshold ? Colors.OrangeRed : Colors.DodgerBlue;
+        ThresholdLabel.Text = $"Threshold: {level.ThresholdDb:F1} dBFS";
     }
 
     void UpdateToggleUi()

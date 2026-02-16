@@ -71,7 +71,8 @@ static class Program
 
         // Core services
         services.AddSingleton<MonitoringStateService>();
-        services.AddHostedService<AudioCaptureService>();
+        services.AddSingleton<AudioCaptureService>();
+        services.AddHostedService(sp => sp.GetRequiredService<AudioCaptureService>());
     }
 
     static async Task EnsureAndMigrateDbAsync(WebApplication app)

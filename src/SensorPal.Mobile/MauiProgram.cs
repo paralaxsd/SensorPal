@@ -4,7 +4,6 @@ using Plugin.Maui.Audio;
 using SensorPal.Mobile.Infrastructure;
 using SensorPal.Mobile.Logging;
 using SensorPal.Mobile.Pages;
-using SensorPal.Shared.Extensions;
 using System.Reflection;
 
 namespace SensorPal.Mobile;
@@ -27,17 +26,8 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // Create the log store upfront so it can be shared between the
-        // logging pipeline and the DI container.
-        var logStore = new InMemoryLogStore();
-        builder.Services.AddSingleton(logStore);
-        builder.Logging.AddProvider(new InMemoryLoggerProvider(logStore));
-
+        AddLogging(builder);
         AddServices(builder);
-
-#if DEBUG
-        builder.Logging.AddDebug();
-#endif
 
         return builder.Build();
     }
@@ -71,6 +61,31 @@ public static class MauiProgram
     {
         builder.Services.Configure<ServerConfig>(
             builder.Configuration.GetRequiredSection(nameof(ServerConfig)));
+    }
+
+    static void AddLogging(MauiAppBuilder builder)
+    {
+#if DEBUG
+        builder.Logging.AddDebug();
+        builder.Logging.SetMinimumLevel(LogLevel.Debug);
+#endif
+
+        AddMemoryLogger(builder);
+    }
+
+    static void AddMemoryLogger(MauiAppBuilder builder)
+    {
+        // Create the log store upfront so it can be shared between the
+        // logging pipeline and the DI container.
+
+        var logStore = new InMemoryLogStore();
+        builder.Services.AddSingleton(logStore);
+#if DEBUG
+        var minLevel = LogLevel.Debug;
+#else
+        var minLevel = LogLevel.Information;
+#endif
+        builder.Logging.AddProvider(new InMemoryLoggerProvider(logStore, minLevel));
     }
 
     static void AddServices(MauiAppBuilder builder)

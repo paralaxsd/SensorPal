@@ -16,6 +16,7 @@ sealed class AudioCaptureService(
     ILogger<AudioCaptureService> logger) : IHostedService, IDisposable
 {
     readonly AudioConfig _config = options.Value;
+    readonly int _postRollMs = options.Value.PostRollSeconds * 1000;
 
     WasapiCapture? _capture;
     LameMP3FileWriter? _backgroundWriter;
@@ -29,7 +30,8 @@ sealed class AudioCaptureService(
     DateTime _currentEventStart;
     bool _recordingClip;
     int _postRollRemainingMs;
-    readonly int _postRollMs = options.Value.PostRollSeconds * 1000;
+
+    public double? CurrentDb => _detector?.CurrentDb;
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
