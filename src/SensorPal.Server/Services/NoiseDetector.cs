@@ -16,7 +16,7 @@ sealed class NoiseDetector
     public event Action<DateTime, double>? EventStarted;
     public event Action<DateTime, double, int>? EventEnded;
 
-    public double CurrentDb { get; private set; } = double.NegativeInfinity;
+    public double CurrentDb { get; private set; } = -100.0;
 
     public NoiseDetector(double thresholdDb, WaveFormat format, int silenceTimeoutMs = 5000)
     {
@@ -63,7 +63,7 @@ sealed class NoiseDetector
     {
         // 16-bit PCM only
         var sampleCount = count / 2;
-        if (sampleCount == 0) return double.NegativeInfinity;
+        if (sampleCount == 0) return -100.0;
 
         double sumSq = 0;
         for (var i = offset; i < offset + count - 1; i += 2)
