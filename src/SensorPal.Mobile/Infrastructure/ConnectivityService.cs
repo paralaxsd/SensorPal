@@ -1,8 +1,11 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace SensorPal.Mobile.Infrastructure;
 
-public sealed class ConnectivityService(IOptions<ServerConfig> config) : IDisposable
+public sealed class ConnectivityService(
+    IOptions<ServerConfig> config,
+    ILogger<ConnectivityService> logger) : IDisposable
 {
     static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(60);
 
@@ -22,10 +25,6 @@ public sealed class ConnectivityService(IOptions<ServerConfig> config) : IDispos
         _ = RunLoopAsync(_cts.Token);
     }
 
-    /// <summary>
-    /// Actively pings the server and updates connectivity state.
-    /// Called by the periodic timer and by the retry dialog.
-    /// </summary>
     public async Task<bool> CheckNowAsync()
     {
         bool reachable;
@@ -43,21 +42,25 @@ public sealed class ConnectivityService(IOptions<ServerConfig> config) : IDispos
         return reachable;
     }
 
-    /// <summary>
-    /// Reports the outcome of any HTTP call made by SensorPalClient,
-    /// allowing fast detection of connectivity changes without an extra ping.
-    /// </summary>
     public void ReportResult(bool reachable) => UpdateState(reachable);
 
     void UpdateState(bool reachable)
     {
         if (reachable == IsServerReachable) return;
         IsServerReachable = reachable;
+
+        if (reachable)
+            logger.LogInformation("Server connectivity restored");
+        else
+            logger.LogWarning("Server unreachable");
+
         ConnectivityChanged?.Invoke(reachable);
     }
 
     async Task RunLoopAsync(CancellationToken ct)
     {
+        logger.LogInformation("Connectivity monitor started ({Interval} min interval)",
+            (int)CheckInterval.TotalMinutes);
         await CheckNowAsync();
 
         using var timer = new PeriodicTimer(CheckInterval);

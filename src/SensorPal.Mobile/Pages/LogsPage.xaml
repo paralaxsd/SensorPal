@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:conv="clr-namespace:SensorPal.Mobile.Converters"
+             x:Class="SensorPal.Mobile.Pages.LogsPage"
+             Title="Logs">
+
+    <ContentPage.Resources>
+        <conv:LogLevelTextConverter x:Key="LevelText" />
+        <conv:LogLevelColorConverter x:Key="LevelColor" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="*, Auto">
+
+        <CollectionView x:Name="LogsView"
+                        Grid.Row="0"
+                        SelectionMode="None"
+                        EmptyView="No log entries yet.">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid ColumnDefinitions="64, 36, *"
+                          ColumnSpacing="6"
+                          Padding="8,3">
+
+                        <!-- Timestamp -->
+                        <Label Grid.Column="0"
+                               Text="{Binding Timestamp, StringFormat='{0:HH:mm:ss}'}"
+                               FontSize="11"
+                               TextColor="Gray"
+                               VerticalOptions="Start" />
+
+                        <!-- Level badge -->
+                        <Label Grid.Column="1"
+                               Text="{Binding Level, Converter={StaticResource LevelText}}"
+                               TextColor="{Binding Level, Converter={StaticResource LevelColor}}"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               VerticalOptions="Start" />
+
+                        <!-- Category + Message -->
+                        <VerticalStackLayout Grid.Column="2" Spacing="0">
+                            <Label Text="{Binding Category}"
+                                   TextColor="{Binding Level, Converter={StaticResource LevelColor}}"
+                                   FontSize="10"
+                                   FontAttributes="Bold" />
+                            <Label Text="{Binding Message}"
+                                   FontSize="12"
+                                   LineBreakMode="WordWrap" />
+                        </VerticalStackLayout>
+
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Grid.Row="1"
+                Text="Clear"
+                Margin="16,8"
+                HorizontalOptions="End"
+                Clicked="OnClearClicked" />
+
+    </Grid>
+
+</ContentPage>

@@ -1,10 +1,14 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SensorPal.Shared.Models;
 using System.Net.Http.Json;
 
 namespace SensorPal.Mobile.Infrastructure;
 
-public sealed class SensorPalClient(IOptions<ServerConfig> config, ConnectivityService connectivity)
+public sealed class SensorPalClient(
+    IOptions<ServerConfig> config,
+    ConnectivityService connectivity,
+    ILogger<SensorPalClient> logger)
 {
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
     readonly string _base = config.Value.BaseUrl;
@@ -31,11 +35,17 @@ public sealed class SensorPalClient(IOptions<ServerConfig> config, ConnectivityS
     public string GetEventAudioUrl(long eventId)
         => $"{_base}/events/{eventId}/audio";
 
-    public Task StartMonitoringAsync()
-        => ExecuteAsync(() => _http.PostAsync($"{_base}/monitoring/start", null));
+    public async Task StartMonitoringAsync()
+    {
+        await ExecuteAsync(() => _http.PostAsync($"{_base}/monitoring/start", null));
+        logger.LogInformation("Monitoring started");
+    }
 
-    public Task StopMonitoringAsync()
-        => ExecuteAsync(() => _http.PostAsync($"{_base}/monitoring/stop", null));
+    public async Task StopMonitoringAsync()
+    {
+        await ExecuteAsync(() => _http.PostAsync($"{_base}/monitoring/stop", null));
+        logger.LogInformation("Monitoring stopped");
+    }
 
     async Task<T> ExecuteAsync<T>(Func<Task<T>> call)
     {
@@ -45,9 +55,10 @@ public sealed class SensorPalClient(IOptions<ServerConfig> config, ConnectivityS
             connectivity.ReportResult(true);
             return result;
         }
-        catch
+        catch (Exception ex)
         {
             connectivity.ReportResult(false);
+            logger.LogError("HTTP request failed: {Message}", ex.Message);
             throw;
         }
     }

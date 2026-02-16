@@ -12,6 +12,9 @@
         <ShellContent Title="Events"
                       ContentTemplate="{DataTemplate pages:EventsPage}"
                       Route="EventsPage" />
+        <ShellContent Title="Logs"
+                      ContentTemplate="{DataTemplate pages:LogsPage}"
+                      Route="LogsPage" />
     </TabBar>
 
 </Shell>

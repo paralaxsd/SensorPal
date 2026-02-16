@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Plugin.Maui.Audio;
 using SensorPal.Mobile.Infrastructure;
+using SensorPal.Mobile.Logging;
 using SensorPal.Mobile.Pages;
 using SensorPal.Shared.Extensions;
 using System.Reflection;
@@ -25,6 +26,12 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
+
+        // Create the log store upfront so it can be shared between the
+        // logging pipeline and the DI container.
+        var logStore = new InMemoryLogStore();
+        builder.Services.AddSingleton(logStore);
+        builder.Logging.AddProvider(new InMemoryLoggerProvider(logStore));
 
         AddServices(builder);
 
@@ -74,5 +81,6 @@ public static class MauiProgram
         builder.Services.AddTransient<SensorPalClient>();
         builder.Services.AddTransient<MonitoringPage>();
         builder.Services.AddTransient<EventsPage>();
+        builder.Services.AddTransient<LogsPage>();
     }
 }
