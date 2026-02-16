@@ -12,4 +12,10 @@ public partial class App : Application
 
     protected override Window CreateWindow(IActivationState? activationState)
         => new Window(_shell);
+
+    protected override void OnResume()
+    {
+        base.OnResume();
+        _shell.CheckConnectivityOnResume();
+    }
 }
