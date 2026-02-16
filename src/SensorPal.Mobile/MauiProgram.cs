@@ -68,6 +68,8 @@ public static class MauiProgram
 
     static void AddServices(MauiAppBuilder builder)
     {
+        builder.Services.AddSingleton<ConnectivityService>();
+        builder.Services.AddSingleton<AppShell>();
         builder.Services.AddTransient<MainPage>();
         builder.Services.AddTransient<SensorPalClient>();
         builder.Services.AddTransient<MonitoringPage>();

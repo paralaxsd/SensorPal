@@ -32,10 +32,7 @@ public partial class MonitoringPage : ContentPage
             else
                 await StartMonitoringAsync();
         }
-        catch
-        {
-            await DisplayAlertAsync("Error", "Could not reach the server.", "OK");
-        }
+        catch { /* connectivity dialog handles unreachable-server cases */ }
     }
 
     async Task StartMonitoringAsync()

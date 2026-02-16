@@ -4,30 +4,51 @@ using System.Net.Http.Json;
 
 namespace SensorPal.Mobile.Infrastructure;
 
-public sealed class SensorPalClient(IOptions<ServerConfig> config)
+public sealed class SensorPalClient(IOptions<ServerConfig> config, ConnectivityService connectivity)
 {
-    readonly HttpClient _http = new();
-    readonly ServerConfig _config = config.Value;
+    readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
+    readonly string _base = config.Value.BaseUrl;
 
-    public async Task<string> GetStatusAsync()
-        => await _http.GetStringAsync($"{_config.BaseUrl}/status");
+    public Task<string> GetStatusAsync()
+        => ExecuteAsync(() => _http.GetStringAsync($"{_base}/status"));
 
     public async Task<IReadOnlyList<NoiseEventDto>> GetEventsAsync(DateOnly date)
-        => await _http.GetFromJsonAsync<List<NoiseEventDto>>(
-               $"{_config.BaseUrl}/events?date={date:yyyy-MM-dd}")
-           ?? [];
+    {
+        var list = await ExecuteAsync(
+            () => _http.GetFromJsonAsync<List<NoiseEventDto>>(
+                $"{_base}/events?date={date:yyyy-MM-dd}"));
+        return list ?? [];
+    }
 
     public async Task<IReadOnlyList<MonitoringSessionDto>> GetSessionsAsync()
-        => await _http.GetFromJsonAsync<List<MonitoringSessionDto>>(
-               $"{_config.BaseUrl}/monitoring/sessions")
-           ?? [];
+    {
+        var list = await ExecuteAsync(
+            () => _http.GetFromJsonAsync<List<MonitoringSessionDto>>(
+                $"{_base}/monitoring/sessions"));
+        return list ?? [];
+    }
 
     public string GetEventAudioUrl(long eventId)
-        => $"{_config.BaseUrl}/events/{eventId}/audio";
+        => $"{_base}/events/{eventId}/audio";
 
     public Task StartMonitoringAsync()
-        => _http.PostAsync($"{_config.BaseUrl}/monitoring/start", null);
+        => ExecuteAsync(() => _http.PostAsync($"{_base}/monitoring/start", null));
 
     public Task StopMonitoringAsync()
-        => _http.PostAsync($"{_config.BaseUrl}/monitoring/stop", null);
+        => ExecuteAsync(() => _http.PostAsync($"{_base}/monitoring/stop", null));
+
+    async Task<T> ExecuteAsync<T>(Func<Task<T>> call)
+    {
+        try
+        {
+            var result = await call();
+            connectivity.ReportResult(true);
+            return result;
+        }
+        catch
+        {
+            connectivity.ReportResult(false);
+            throw;
+        }
+    }
 }
