@@ -57,6 +57,9 @@ sealed class Build : NukeBuild
     Target DeployAndroid => _ => _
         .Executes(DeployToAndroidDevice);
 
+    Target ListAndroidDevices => _ => _
+        .Executes(ListAllAndroidDevices);
+
     /******************************************************************************************
      * METHODS
      * ***************************************************************************************/
@@ -64,25 +67,38 @@ sealed class Build : NukeBuild
 
     void DeployToAndroidDevice()
     {
-        TryRestartAdbServer();
+        TryKillAdbServer();
 
         var deviceArg = string.IsNullOrWhiteSpace(DeviceId) ?
             "" : $" --device-id {DeviceId}";
         DotNet($"build {MobileProject} -t:Install -f net10.0-android -c {Configuration}{deviceArg}");
     }
 
-    void TryRestartAdbServer()
+    void ListAllAndroidDevices()
     {
+        TryKillAdbServer();
         if (AdbTool is { } adb)
         {
-            Log.Information("Restarting adb server...");
-
-            adb("kill-server");
-            adb("start-server");
+            adb("devices");
         }
         else
         {
-            Log.Warning("Could not find adb tool, skipping adb server restart. " +
+            Log.Warning("Could not find adb tool, skipping device listing. " +
+                "If you encounter deployment issues, ensure that adb is installed and ANDROID_HOME or ANDROID_SDK_ROOT environment variables are set.");
+        }
+    }
+
+    void TryKillAdbServer()
+    {
+        if (AdbTool is { } adb)
+        {
+            Log.Information("Killing adb server...");
+
+            adb("kill-server");
+        }
+        else
+        {
+            Log.Warning("Could not find adb tool, skipping adb server kill. " +
                 "If you encounter deployment issues, ensure that adb is installed and ANDROID_HOME or ANDROID_SDK_ROOT environment variables are set.");
         }
     }

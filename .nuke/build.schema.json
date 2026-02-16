@@ -27,6 +27,7 @@
         "Clean",
         "Compile",
         "DeployAndroid",
+        "ListAndroidDevices",
         "Restore",
         "Test"
       ]
