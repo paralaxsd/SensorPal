@@ -17,21 +17,15 @@ Night-time noise monitoring for Windows + Android. Captures audio from a USB aud
 
 ### 1. Configure the audio device
 
-Find your device name:
+If your audio interface is already the **Windows default input device**, you can skip this step — the server will use it automatically.
 
-```
-dotnet run --project src/SensorPal.Server
-```
-
-Then open `http://localhost:5000/scalar/v1` → `GET /audio/devices`. Note the exact `name` of your Focusrite input.
+Otherwise, find the exact device name: run the server, open `http://localhost:5000/scalar/v1` → `GET /audio/devices`, note the `name` of your input.
 
 Store it as a user secret (never committed to git):
 
 ```
 dotnet user-secrets set "AudioConfig:DeviceName" "Analogue 1 + 2 (Focusrite USB Audio)" --project src/SensorPal.Server
 ```
-
-Leave it empty to use the Windows default capture device.
 
 ### 2. Configure Windows audio
 
@@ -71,14 +65,22 @@ Replace `192.168.1.X` with your PC's LAN IP (`ipconfig` → IPv4 Address).
 
 Enable **USB Debugging** on the phone: Settings → About → tap Build Number 7× → Developer Options → USB Debugging.
 
-```
-dotnet build -t:Install -f net10.0-android src/SensorPal.Mobile/SensorPal.Mobile.csproj -c Release
+Verify the device is visible (no need to know where ADB is installed):
+
+```powershell
+.\build.ps1 ListAndroidDevices
 ```
 
-Or via the Nuke build script:
+Then deploy:
 
 ```powershell
 .\build.ps1 DeployAndroid --configuration Release
+```
+
+If multiple devices are connected, pass the ID from `ListAndroidDevices`:
+
+```powershell
+.\build.ps1 DeployAndroid --configuration Release --deviceId emulator-5554
 ```
 
 ---
