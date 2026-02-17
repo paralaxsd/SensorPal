@@ -61,19 +61,38 @@ sealed class NoiseDetector
 
     double CalculateRmsDb(byte[] buffer, int offset, int count)
     {
-        // 16-bit PCM only
-        var sampleCount = count / 2;
-        if (sampleCount == 0) return -100.0;
+        var bytesPerSample = _format.BitsPerSample / 8;
+        var bytesPerFrame = bytesPerSample * _format.Channels;
+        var frameCount = count / bytesPerFrame;
+        if (frameCount == 0) return -100.0;
 
+        var isFloat = _format.Encoding == WaveFormatEncoding.IeeeFloat;
         double sumSq = 0;
-        for (var i = offset; i < offset + count - 1; i += 2)
+
+        for (var frame = 0; frame < frameCount; frame++)
         {
-            var sample = (short)(buffer[i] | (buffer[i + 1] << 8));
-            var normalized = sample / 32768.0;
-            sumSq += normalized * normalized;
+            // For multi-channel capture: average power across channels per frame.
+            double frameSumSq = 0;
+            for (var ch = 0; ch < _format.Channels; ch++)
+            {
+                var pos = offset + frame * bytesPerFrame + ch * bytesPerSample;
+                var s = ReadNormalizedSample(buffer, pos, bytesPerSample, isFloat);
+                frameSumSq += s * s;
+            }
+            sumSq += frameSumSq / _format.Channels;
         }
 
-        var rms = Math.Sqrt(sumSq / sampleCount);
-        return rms < 1e-10 ? -100.0 : 20 * Math.Log10(rms);
+        var rms = Math.Sqrt(sumSq / frameCount);
+        return rms > 0 ? Math.Max(20 * Math.Log10(rms), -100.0) : -100.0;
     }
+
+    static double ReadNormalizedSample(byte[] buffer, int offset, int bytesPerSample, bool isFloat)
+        => bytesPerSample switch
+        {
+            2 => (short)(buffer[offset] | (buffer[offset + 1] << 8)) / 32768.0,
+            3 => (buffer[offset] | (buffer[offset + 1] << 8) | ((sbyte)buffer[offset + 2] << 16)) / 8388608.0,
+            4 when isFloat => BitConverter.ToSingle(buffer, offset),
+            4 => BitConverter.ToInt32(buffer, offset) / 2147483648.0,
+            _ => 0.0
+        };
 }

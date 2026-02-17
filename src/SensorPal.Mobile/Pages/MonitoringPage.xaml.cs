@@ -10,6 +10,7 @@ public partial class MonitoringPage : ContentPage
     IDispatcherTimer? _pollTimer;
     IDispatcherTimer? _levelTimer;
     int _liveEventCount;
+    bool _levelRefreshing;
 
     public MonitoringPage(SensorPalClient client)
     {
@@ -34,7 +35,7 @@ public partial class MonitoringPage : ContentPage
     void StartLevelTimer()
     {
         _levelTimer = Dispatcher.CreateTimer();
-        _levelTimer.Interval = TimeSpan.FromMilliseconds(500);
+        _levelTimer.Interval = TimeSpan.FromMilliseconds(150);
         _levelTimer.Tick += (_, _) => _ = RefreshLevelAsync();
         _levelTimer.Start();
     }
@@ -97,6 +98,14 @@ public partial class MonitoringPage : ContentPage
     }
 
     async Task RefreshLevelAsync()
+    {
+        if (_levelRefreshing) return;
+        _levelRefreshing = true;
+        try { await DoRefreshLevelAsync(); }
+        finally { _levelRefreshing = false; }
+    }
+
+    async Task DoRefreshLevelAsync()
     {
         var level = await _client.GetLevelAsync();
 

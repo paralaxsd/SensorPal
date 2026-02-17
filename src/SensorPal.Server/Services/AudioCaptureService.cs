@@ -74,7 +74,11 @@ sealed class AudioCaptureService(
         _capture.DataAvailable += OnDataAvailable;
         _capture.StartRecording();
 
-        logger.LogInformation("Recording started on '{Device}', session #{Id}", device.FriendlyName, _currentSessionId);
+        logger.LogInformation(
+            "Recording started on '{Device}', session #{Id}, format: {Ch}ch {Rate}Hz {Bits}bit {Enc}",
+            device.FriendlyName, _currentSessionId,
+            _captureFormat.Channels, _captureFormat.SampleRate,
+            _captureFormat.BitsPerSample, _captureFormat.Encoding);
     }
 
     void StopCapture()
