@@ -31,7 +31,16 @@ static class MonitoringEndpoints
         });
 
         group.MapGet("/level", (AudioCaptureService capture, IOptions<AudioConfig> options) =>
-            Results.Ok(new LiveLevelDto(capture.CurrentDb, options.Value.NoiseThresholdDb)));
+        {
+            var eventSince = capture.EventStartedAt.HasValue
+                ? new DateTimeOffset(capture.EventStartedAt.Value, TimeSpan.Zero)
+                : (DateTimeOffset?)null;
+            return Results.Ok(new LiveLevelDto(
+                capture.CurrentDb,
+                options.Value.NoiseThresholdDb,
+                capture.IsEventActive,
+                eventSince));
+        });
     }
 
     static MonitoringSessionDto ToDto(MonitoringSession s) => new()

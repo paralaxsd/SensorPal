@@ -1,5 +1,4 @@
 using SensorPal.Mobile.Infrastructure;
-using SensorPal.Shared.Models;
 
 namespace SensorPal.Mobile.Pages;
 
@@ -9,6 +8,8 @@ public partial class MonitoringPage : ContentPage
     bool _isMonitoring;
     IDispatcherTimer? _pollTimer;
     IDispatcherTimer? _levelTimer;
+    IDispatcherTimer? _blinkTimer;
+    bool _blinkOn;
     int _liveEventCount;
     bool _levelRefreshing;
 
@@ -30,6 +31,7 @@ public partial class MonitoringPage : ContentPage
         base.OnDisappearing();
         _levelTimer?.Stop();
         _levelTimer = null;
+        StopBlinkTimer();
     }
 
     void StartLevelTimer()
@@ -128,15 +130,52 @@ public partial class MonitoringPage : ContentPage
         LevelBar.Progress = progress;
         LevelBar.ProgressColor = aboveThreshold ? Colors.OrangeRed : Colors.DodgerBlue;
         ThresholdLabel.Text = $"Threshold: {level.ThresholdDb:F1} dBFS";
+
+        if (level.IsEventActive && level.EventActiveSince.HasValue)
+        {
+            var elapsed = DateTimeOffset.UtcNow - level.EventActiveSince.Value;
+            EventActiveLabel.Text = $"⬤ Detecting event — {elapsed:mm\\:ss}";
+            EventActiveLabel.IsVisible = true;
+        }
+        else
+        {
+            EventActiveLabel.IsVisible = false;
+        }
     }
 
     void UpdateToggleUi()
     {
         StatusLabel.Text = _isMonitoring ? "● Monitoring" : "● Idle";
         StatusLabel.TextColor = _isMonitoring ? Colors.Red : Colors.Gray;
+        StatusLabel.Opacity = 1.0;
         ToggleButton.Text = _isMonitoring ? "Stop Monitoring" : "Start Monitoring";
         ToggleButton.BackgroundColor = _isMonitoring ? Colors.DarkRed : Colors.DodgerBlue;
         LiveStatsPanel.IsVisible = _isMonitoring;
+
+        if (_isMonitoring)
+            StartBlinkTimer();
+        else
+            StopBlinkTimer();
+    }
+
+    void StartBlinkTimer()
+    {
+        if (_blinkTimer is { }) return;
+        _blinkTimer = Dispatcher.CreateTimer();
+        _blinkTimer.Interval = TimeSpan.FromMilliseconds(600);
+        _blinkTimer.Tick += (_, _) =>
+        {
+            _blinkOn = !_blinkOn;
+            StatusLabel.Opacity = _blinkOn ? 1.0 : 0.15;
+        };
+        _blinkTimer.Start();
+    }
+
+    void StopBlinkTimer()
+    {
+        _blinkTimer?.Stop();
+        _blinkTimer = null;
+        StatusLabel.Opacity = 1.0;
     }
 
     async Task LoadSessionsAsync()

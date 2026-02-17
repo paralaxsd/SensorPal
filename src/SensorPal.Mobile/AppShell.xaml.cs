@@ -21,5 +21,5 @@ public partial class AppShell
         _dialog.Start();
     }
 
-    public void CheckConnectivityOnResume() => _dialog.CheckOnResume();
+    public void CheckConnectivityOnResume() => _ = _dialog.CheckOnResumeAsync();
 }

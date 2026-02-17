@@ -32,6 +32,8 @@ sealed class AudioCaptureService(
     int _postRollRemainingMs;
 
     public double? CurrentDb => _detector?.CurrentDb;
+    public bool IsEventActive => _detector?.IsEventActive ?? false;
+    public DateTime? EventStartedAt => _detector?.EventStartedAt;
 
     public Task StartAsync(CancellationToken cancellationToken)
     {

@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:conv="clr-namespace:SensorPal.Mobile.Converters"
+             xmlns:logging="clr-namespace:SensorPal.Mobile.Logging"
              x:Class="SensorPal.Mobile.Pages.LogsPage"
              Title="Logs">
 
@@ -17,7 +18,7 @@
                         SelectionMode="None"
                         EmptyView="No log entries yet.">
             <CollectionView.ItemTemplate>
-                <DataTemplate>
+                <DataTemplate x:DataType="logging:LogEntry">
                     <Grid ColumnDefinitions="64, 36, *"
                           ColumnSpacing="6"
                           Padding="8,3">

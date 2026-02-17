@@ -41,4 +41,4 @@ sealed class AudioDeviceDto
     public bool IsDefault { get; init; }
 }
 
-sealed record LiveLevelDto(double? Db, double ThresholdDb);
+sealed record LiveLevelDto(double? Db, double ThresholdDb, bool IsEventActive, DateTimeOffset? EventActiveSince);

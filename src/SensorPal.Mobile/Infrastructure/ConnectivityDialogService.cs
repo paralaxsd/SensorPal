@@ -38,8 +38,12 @@ public sealed class ConnectivityDialogService(
             _ = ShowOfflineDialogAsync();
     }
 
-    public void CheckOnResume()
+    public async Task CheckOnResumeAsync()
     {
+        // Do a fresh ping first — the cached IsServerReachable may be stale due to Android
+        // Doze mode suppressing background network requests while the screen was off.
+        await connectivity.CheckNowAsync();
+
         if (!connectivity.IsServerReachable && !_dialogVisible)
             MainThread.BeginInvokeOnMainThread(() => _ = ShowOfflineDialogAsync());
     }

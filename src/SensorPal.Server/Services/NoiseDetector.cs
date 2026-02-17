@@ -17,6 +17,8 @@ sealed class NoiseDetector
     public event Action<DateTime, double, int>? EventEnded;
 
     public double CurrentDb { get; private set; } = -100.0;
+    public bool IsEventActive => _eventActive;
+    public DateTime? EventStartedAt => _eventActive ? _eventStart : null;
 
     public NoiseDetector(double thresholdDb, WaveFormat format, int silenceTimeoutMs = 5000)
     {

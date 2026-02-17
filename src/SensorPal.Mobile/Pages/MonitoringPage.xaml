@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:conv="clr-namespace:SensorPal.Mobile.Converters"
+             xmlns:models="clr-namespace:SensorPal.Shared.Models;assembly=SensorPal.Shared"
              x:Class="SensorPal.Mobile.Pages.MonitoringPage"
              Title="Monitoring">
 
@@ -44,6 +45,11 @@
                        Text="Threshold: —"
                        TextColor="Gray"
                        FontSize="12" />
+                <Label x:Name="EventActiveLabel"
+                       IsVisible="False"
+                       TextColor="OrangeRed"
+                       FontAttributes="Bold"
+                       FontSize="12" />
             </VerticalStackLayout>
 
             <!-- Live stats (shown only when monitoring) -->
@@ -65,7 +71,7 @@
                             SelectionMode="None"
                             EmptyView="No sessions yet.">
                 <CollectionView.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="models:MonitoringSessionDto">
                         <Grid Padding="0,8" ColumnDefinitions="*,Auto" ColumnSpacing="12">
                             <VerticalStackLayout Grid.Column="0">
                                 <Label Text="{Binding StartedAt, StringFormat='{0:dd.MM.yyyy HH:mm}'}"
