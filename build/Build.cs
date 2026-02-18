@@ -102,7 +102,7 @@ sealed class Build : NukeBuild
         // we want the final command to look like: dotnet build /p:AdbTarget="-s <device id>".
         var deviceArg = string.IsNullOrWhiteSpace(DeviceId) ?
             "" : $" /p:AdbTarget=\"-s {DeviceId}\"";
-        DotNet($"build {MobileProject} -t:Install -f net10.0-android -c {Configuration}{deviceArg:nq}");
+        DotNet($"build {MobileProject} -t:Clean -t:Install -f net10.0-android -c {Configuration}{deviceArg:nq}");
     }
 
     void ListAllAndroidDevices()
