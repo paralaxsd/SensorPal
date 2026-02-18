@@ -61,6 +61,7 @@ public partial class MonitoringPage : ContentPage
         _isMonitoring = true;
         _liveEventCount = 0;
         UpdateToggleUi();
+        await LoadSessionsAsync();
 
         _pollTimer = Dispatcher.CreateTimer();
         _pollTimer.Interval = TimeSpan.FromSeconds(2);

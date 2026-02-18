@@ -46,8 +46,8 @@ static class MonitoringEndpoints
     static MonitoringSessionDto ToDto(MonitoringSession s) => new()
     {
         Id = s.Id,
-        StartedAt = s.StartedAt,
-        EndedAt = s.EndedAt,
+        StartedAt = new DateTimeOffset(s.StartedAt, TimeSpan.Zero),
+        EndedAt = s.EndedAt.HasValue ? new DateTimeOffset(s.EndedAt.Value, TimeSpan.Zero) : null,
         EventCount = s.EventCount,
         IsActive = s.EndedAt is null
     };

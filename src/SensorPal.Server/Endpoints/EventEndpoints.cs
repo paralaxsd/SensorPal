@@ -39,7 +39,7 @@ static class EventEndpoints
     static NoiseEventDto ToDto(NoiseEvent e) => new()
     {
         Id = e.Id,
-        DetectedAt = e.DetectedAt,
+        DetectedAt = new DateTimeOffset(e.DetectedAt, TimeSpan.Zero),
         PeakDb = e.PeakDb,
         DurationMs = e.DurationMs,
         BackgroundOffsetMs = e.BackgroundOffsetMs,
