@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Plugin.Maui.Audio;
 using SensorPal.Mobile.Infrastructure;
 
@@ -7,13 +8,15 @@ public partial class EventsPage : ContentPage
 {
     readonly SensorPalClient _client;
     readonly IAudioManager _audio;
+    readonly ILogger<EventsPage> _logger;
     IAudioPlayer? _player;
     DateOnly _selectedDate = DateOnly.FromDateTime(DateTime.Today);
 
-    public EventsPage(SensorPalClient client, IAudioManager audio)
+    public EventsPage(SensorPalClient client, IAudioManager audio, ILogger<EventsPage> logger)
     {
         _client = client;
         _audio = audio;
+        _logger = logger;
         InitializeComponent();
         DateSelector.Date = DateTime.Today;
     }
@@ -52,17 +55,17 @@ public partial class EventsPage : ContentPage
 
         try
         {
-            var url = _client.GetEventAudioUrl(id);
             PlaybackLabel.Text = "Loading…";
 
-            var stream = await new HttpClient().GetStreamAsync(url);
+            var stream = await _client.GetEventAudioAsync(id);
             _player = _audio.CreatePlayer(stream);
             _player.Play();
 
             PlaybackLabel.Text = $"Playing event #{id}…";
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Playback failed for event {Id}", id);
             PlaybackLabel.Text = "Playback failed.";
         }
     }

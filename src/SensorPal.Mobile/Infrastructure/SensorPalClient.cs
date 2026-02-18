@@ -38,8 +38,12 @@ public sealed class SensorPalClient(
         catch { return null; }
     }
 
-    public string GetEventAudioUrl(long eventId)
-        => $"{_base}/events/{eventId}/audio";
+    public async Task<Stream> GetEventAudioAsync(long eventId)
+    {
+        var bytes = await ExecuteAsync(
+            () => _http.GetByteArrayAsync($"{_base}/events/{eventId}/audio"));
+        return new MemoryStream(bytes);
+    }
 
     public async Task StartMonitoringAsync()
     {
