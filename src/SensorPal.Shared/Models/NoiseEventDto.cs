@@ -2,7 +2,7 @@ namespace SensorPal.Shared.Models;
 
 public sealed record NoiseEventDto(
     long Id,
-    DateTime DetectedAt,
+    DateTimeOffset DetectedAt,
     double PeakDb,
     int DurationMs,
     long BackgroundOffsetMs,

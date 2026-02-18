@@ -2,8 +2,8 @@ namespace SensorPal.Shared.Models;
 
 public sealed record MonitoringSessionDto(
     long Id,
-    DateTime StartedAt,
-    DateTime? EndedAt,
+    DateTimeOffset StartedAt,
+    DateTimeOffset? EndedAt,
     int EventCount,
     bool IsActive);
 

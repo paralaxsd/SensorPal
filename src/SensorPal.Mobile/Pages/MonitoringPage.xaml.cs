@@ -91,7 +91,7 @@ public partial class MonitoringPage : ContentPage
             if (active is null) return;
 
             _liveEventCount = active.EventCount;
-            var duration = DateTime.UtcNow - active.StartedAt;
+            var duration = DateTimeOffset.UtcNow - active.StartedAt;
 
             DurationLabel.Text = duration.ToString(@"hh\:mm\:ss");
             EventCountLabel.Text = active.EventCount.ToString();
