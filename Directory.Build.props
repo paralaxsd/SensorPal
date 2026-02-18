@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Paralax^Speckdrumm; Claude Sonnet</Authors>
+    <Company>Speckdrumm</Company>
+    <Product>SensorPal</Product>
+    <Copyright>Copyright © 2026 Paralax^Speckdrumm</Copyright>
+    <RepositoryUrl>https://github.com/paralaxsd/SensorPal</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- Nerdbank.GitVersioning — version resolved from Directory.Packages.props -->
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

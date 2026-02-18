@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Build tooling -->
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.7.112" />
+    <PackageVersion Include="Nuke.Common" Version="10.1.0" />
+    <!-- Server -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.2" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2" />
+    <PackageVersion Include="NAudio" Version="2.2.1" />
+    <PackageVersion Include="NAudio.Wasapi" Version="2.2.1" />
+    <PackageVersion Include="NAudio.Lame" Version="2.1.0" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.12.8" />
+    <!-- Mobile -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+    <PackageVersion Include="Plugin.Maui.Audio" Version="4.0.0" />
+    <!-- Microsoft.Maui.Controls uses $(MauiVersion) which is SDK-managed; kept as VersionOverride in csproj -->
+  </ItemGroup>
+</Project>
