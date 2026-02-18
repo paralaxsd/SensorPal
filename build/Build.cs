@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
 using Nuke.Common;
 using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.IO;
@@ -8,19 +5,20 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
 using Serilog;
+using System;
+using System.IO;
+using System.Linq;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [GitHubActions(
-    "ci-android",
-    GitHubActionsImage.UbuntuLatest,
+    "ci-android", GitHubActionsImage.UbuntuLatest,
     On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.WorkflowDispatch],
-    InvokedTargets = [nameof(PublishAndroid)],
+    InvokedTargets = [nameof(PublishAndroid)], PublishArtifacts = true,
     FetchDepth = 0)]
 [GitHubActions(
-    "ci-server",
-    GitHubActionsImage.WindowsLatest,
+    "ci-server", GitHubActionsImage.WindowsLatest,
     On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.WorkflowDispatch],
-    InvokedTargets = [nameof(Compile)],
+    InvokedTargets = [nameof(PublishServer)], PublishArtifacts = true, 
     FetchDepth = 0)]
 sealed class Build : NukeBuild
 {
@@ -41,6 +39,7 @@ sealed class Build : NukeBuild
     Tool? AdbTool => _adbTool.Value;
     AbsolutePath SolutionFile => RootDirectory / "SensorPal.slnx";
     AbsolutePath MobileProject => RootDirectory / "src" / "SensorPal.Mobile" / "SensorPal.Mobile.csproj";
+    AbsolutePath ServerProject => RootDirectory / "src" / "SensorPal.Server" / "SensorPal.Server.csproj";
     AbsolutePath ArtifactsDir => RootDirectory / "artifacts";
 
     Target Clean => _ => _
@@ -75,12 +74,22 @@ sealed class Build : NukeBuild
 
     Target PublishAndroid => _ => _
         .DependsOn(Restore)
+        .Produces(RootDirectory / "artifacts" / "android")
         .Executes(() => DotNetBuild(s => s
             .SetProjectFile(MobileProject)
             .SetConfiguration(Configuration.Release)
             .SetFramework("net10.0-android")
             .EnableNoRestore()
             .SetOutputDirectory(ArtifactsDir / "android")));
+
+    Target PublishServer => _ => _
+        .DependsOn(Restore)
+        .Produces(RootDirectory / "artifacts" / "server")
+        .Executes(() => DotNetPublish(s => s
+            .SetProject(ServerProject)
+            .SetConfiguration(Configuration.Release)
+            .EnableNoRestore()
+            .SetOutput(ArtifactsDir / "server")));
 
     Target DeployAndroid => _ => _
         .Executes(DeployToAndroidDevice);

@@ -33,5 +33,10 @@ jobs:
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('**/global.json', '**/*.csproj', '**/Directory.Packages.props') }}
-      - name: 'Run: Compile'
-        run: ./build.cmd Compile
+      - name: 'Run: PublishServer'
+        run: ./build.cmd PublishServer
+      - name: 'Publish: server'
+        uses: actions/upload-artifact@v5
+        with:
+          name: server
+          path: artifacts/server

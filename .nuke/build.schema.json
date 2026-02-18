@@ -30,6 +30,7 @@
         "InstallWorkloads",
         "ListAndroidDevices",
         "PublishAndroid",
+        "PublishServer",
         "Restore",
         "Test"
       ]
