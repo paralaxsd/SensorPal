@@ -5,10 +5,16 @@
     <File Path="build.ps1" />
     <File Path="build.sh" />
     <File Path="CLAUDE.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
     <File Path="dotnet-tools.json" />
+    <File Path="NuGet.Config" />
+    <File Path="version.json" />
   </Folder>
   <Folder Name="/00 Solution Items/.github/">
     <File Path=".github/copilot-instructions.md" />
+    <File Path=".github/workflows/ci-android.yml" />
+    <File Path=".github/workflows/ci-server.yml" />
   </Folder>
   <Folder Name="/01 src/">
     <Project Path="src/SensorPal.Mobile/SensorPal.Mobile.csproj" Id="2064884c-2f6c-4cfc-8874-16d789a1299f">

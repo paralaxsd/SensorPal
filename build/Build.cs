@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
+using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
@@ -9,6 +10,18 @@ using Nuke.Common.Utilities.Collections;
 using Serilog;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
+[GitHubActions(
+    "ci-android",
+    GitHubActionsImage.UbuntuLatest,
+    On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.WorkflowDispatch],
+    InvokedTargets = [nameof(PublishAndroid)],
+    FetchDepth = 0)]
+[GitHubActions(
+    "ci-server",
+    GitHubActionsImage.WindowsLatest,
+    On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.WorkflowDispatch],
+    InvokedTargets = [nameof(Compile)],
+    FetchDepth = 0)]
 sealed class Build : NukeBuild
 {
     /******************************************************************************************
@@ -19,7 +32,7 @@ sealed class Build : NukeBuild
 
     [Parameter("Android device id for deployment (use 'adb devices' to list)")]
     readonly string? DeviceId;
-    
+
     readonly Lazy<Tool?> _adbTool = new(TryResolveAdbTool);
 
     /******************************************************************************************
@@ -28,6 +41,7 @@ sealed class Build : NukeBuild
     Tool? AdbTool => _adbTool.Value;
     AbsolutePath SolutionFile => RootDirectory / "SensorPal.slnx";
     AbsolutePath MobileProject => RootDirectory / "src" / "SensorPal.Mobile" / "SensorPal.Mobile.csproj";
+    AbsolutePath ArtifactsDir => RootDirectory / "artifacts";
 
     Target Clean => _ => _
         .Before(Restore)
@@ -35,7 +49,12 @@ sealed class Build : NukeBuild
             .SetProject(SolutionFile)
             .SetConfiguration(Configuration)));
 
+    Target InstallWorkloads => _ => _
+        .OnlyWhenDynamic(() => !IsLocalBuild)
+        .Executes(() => DotNet("workload install maui-android"));
+
     Target Restore => _ => _
+        .DependsOn(InstallWorkloads)
         .Executes(() => DotNetRestore(s => s
             .SetProjectFile(SolutionFile)));
 
@@ -53,6 +72,15 @@ sealed class Build : NukeBuild
             .SetConfiguration(Configuration)
             .EnableNoRestore()
             .EnableNoBuild()));
+
+    Target PublishAndroid => _ => _
+        .DependsOn(Restore)
+        .Executes(() => DotNetBuild(s => s
+            .SetProjectFile(MobileProject)
+            .SetConfiguration(Configuration.Release)
+            .SetFramework("net10.0-android")
+            .EnableNoRestore()
+            .SetOutputDirectory(ArtifactsDir / "android")));
 
     Target DeployAndroid => _ => _
         .Executes(DeployToAndroidDevice);

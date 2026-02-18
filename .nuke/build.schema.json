@@ -27,7 +27,9 @@
         "Clean",
         "Compile",
         "DeployAndroid",
+        "InstallWorkloads",
         "ListAndroidDevices",
+        "PublishAndroid",
         "Restore",
         "Test"
       ]
