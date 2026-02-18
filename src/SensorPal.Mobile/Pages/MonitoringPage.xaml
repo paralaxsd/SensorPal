@@ -8,7 +8,7 @@
 
     <ContentPage.Resources>
         <conv:BoolToStringConverter x:Key="BoolToActiveLabel" TrueValue="● Active" FalseValue="Done" />
-        <conv:LocalDateTimeConverter x:Key="LocalDateTime" />
+        <conv:LocalDateTimeConverter x:Key="LocalDateTime" Format="dd.MM.yyyy HH:mm" />
     </ContentPage.Resources>
 
     <ScrollView>
@@ -75,7 +75,7 @@
                     <DataTemplate x:DataType="models:MonitoringSessionDto">
                         <Grid Padding="0,8" ColumnDefinitions="*,Auto" ColumnSpacing="12">
                             <VerticalStackLayout Grid.Column="0">
-                                <Label Text="{Binding StartedAt, Converter={StaticResource LocalDateTime}, StringFormat='{0:dd.MM.yyyy HH:mm}'}"
+                                <Label Text="{Binding StartedAt, Converter={StaticResource LocalDateTime}}"
                                        FontAttributes="Bold" />
                                 <Label Text="{Binding EventCount, StringFormat='{0} event(s)'}"
                                        TextColor="Gray" FontSize="13" />

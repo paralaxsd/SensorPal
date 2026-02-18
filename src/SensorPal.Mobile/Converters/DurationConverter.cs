@@ -11,6 +11,6 @@ sealed class DurationConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         => value is int ms ? $"{ms / 1000.0:F1} s" : value?.ToString() ?? string.Empty;
 
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }

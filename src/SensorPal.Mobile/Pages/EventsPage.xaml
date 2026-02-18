@@ -7,7 +7,7 @@
              Title="Events">
 
     <ContentPage.Resources>
-        <conv:LocalDateTimeConverter x:Key="LocalDateTime" />
+        <conv:LocalDateTimeConverter x:Key="LocalDateTime" Format="HH:mm:ss" />
         <conv:DurationConverter x:Key="Duration" />
     </ContentPage.Resources>
 
@@ -30,10 +30,13 @@
                         VerticalOptions="FillAndExpand">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:NoiseEventDto">
-                    <Frame Margin="0,4" Padding="12" CornerRadius="8" BorderColor="LightGray">
+                    <Border Margin="0,4" Padding="12"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="LightGray"
+                            BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2E}">
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4">
                             <Label Grid.Row="0" Grid.Column="0"
-                                   Text="{Binding DetectedAt, Converter={StaticResource LocalDateTime}, StringFormat='Start  {0:HH:mm:ss}'}"
+                                   Text="{Binding DetectedAt, Converter={StaticResource LocalDateTime}}"
                                    FontAttributes="Bold" FontSize="16" />
                             <Label Grid.Row="0" Grid.Column="1"
                                    Text="{Binding PeakDb, StringFormat='{0:F1} dBFS'}"
@@ -48,7 +51,7 @@
                                     Clicked="OnPlayClicked"
                                     CommandParameter="{Binding Id}" />
                         </Grid>
-                    </Frame>
+                    </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
