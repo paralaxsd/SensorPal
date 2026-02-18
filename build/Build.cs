@@ -97,9 +97,12 @@ sealed class Build : NukeBuild
     {
         TryKillAdbServer();
 
+        // The Android Install target is documented at https://learn.microsoft.com/en-us/dotnet/android/building-apps/build-targets#install
+        // Also note that we embed deviceArg into the DotNet call using the "nq" format specifier to avoid double quoting -
+        // we want the final command to look like: dotnet build /p:AdbTarget="-s <device id>".
         var deviceArg = string.IsNullOrWhiteSpace(DeviceId) ?
-            "" : $" --device-id {DeviceId}";
-        DotNet($"build {MobileProject} -t:Install -f net10.0-android -c {Configuration}{deviceArg}");
+            "" : $" /p:AdbTarget=\"-s {DeviceId}\"";
+        DotNet($"build {MobileProject} -t:Install -f net10.0-android -c {Configuration}{deviceArg:nq}");
     }
 
     void ListAllAndroidDevices()
