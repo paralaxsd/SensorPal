@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SensorPal.Mobile.Pages.AboutPage"
+             Title="About">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="32" Spacing="16" VerticalOptions="Center">
+
+            <Label Text="SensorPal"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Label x:Name="VersionLabel"
+                   FontSize="16"
+                   TextColor="Gray"
+                   HorizontalOptions="Center" />
+
+            <Label x:Name="BuildLabel"
+                   FontSize="13"
+                   TextColor="Gray"
+                   HorizontalOptions="Center" />
+
+            <BoxView HeightRequest="1" Color="Gray" Margin="0,8" Opacity="0.3" />
+
+            <Label Text="Authors"
+                   FontSize="13"
+                   TextColor="Gray" />
+            <Label Text="Paralax^Speckdrumm &amp; Claude Sonnet"
+                   FontSize="15" />
+
+            <Label Text="Repository"
+                   FontSize="13"
+                   TextColor="Gray"
+                   Margin="0,8,0,0" />
+            <Label Text="https://github.com/paralaxsd/SensorPal"
+                   FontSize="14"
+                   TextColor="#4A90D9"
+                   TextDecorations="Underline">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnRepoLinkTapped" />
+                </Label.GestureRecognizers>
+            </Label>
+
+            <Button Text="Close"
+                    Margin="0,24,0,0"
+                    Clicked="OnCloseClicked" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

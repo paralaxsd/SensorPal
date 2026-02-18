@@ -1,4 +1,5 @@
 using SensorPal.Mobile.Infrastructure;
+using SensorPal.Mobile.Pages;
 
 namespace SensorPal.Mobile;
 
@@ -22,4 +23,7 @@ public partial class AppShell
     }
 
     public void CheckConnectivityOnResume() => _ = _dialog.CheckOnResumeAsync();
+
+    async void OnAboutClicked(object? sender, EventArgs e)
+        => await Navigation.PushModalAsync(new AboutPage());
 }

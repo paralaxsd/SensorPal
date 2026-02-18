@@ -5,6 +5,10 @@
        x:Class="SensorPal.Mobile.AppShell"
        Title="SensorPal">
 
+    <Shell.ToolbarItems>
+        <ToolbarItem Text="About" Clicked="OnAboutClicked" Order="Secondary" />
+    </Shell.ToolbarItems>
+
     <TabBar>
         <ShellContent Title="Monitoring"
                       ContentTemplate="{DataTemplate pages:MonitoringPage}"
