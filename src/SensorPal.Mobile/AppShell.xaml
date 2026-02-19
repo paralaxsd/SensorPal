@@ -6,6 +6,7 @@
        Title="SensorPal">
 
     <Shell.ToolbarItems>
+        <ToolbarItem Text="Settings" Clicked="OnSettingsClicked" Order="Secondary" />
         <ToolbarItem Text="About" Clicked="OnAboutClicked" Order="Secondary" />
     </Shell.ToolbarItems>
 

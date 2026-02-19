@@ -23,7 +23,19 @@ public partial class MonitoringPage : ContentPage
     {
         base.OnAppearing();
         _ = LoadSessionsAsync();
+        _ = LoadThresholdAsync();
         StartLevelTimer();
+    }
+
+    async Task LoadThresholdAsync()
+    {
+        try
+        {
+            var settings = await _client.GetSettingsAsync();
+            if (settings is not null && !_isMonitoring)
+                ThresholdLabel.Text = $"Threshold: {settings.NoiseThresholdDb:F1} dBFS";
+        }
+        catch { }
     }
 
     protected override void OnDisappearing()

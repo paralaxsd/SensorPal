@@ -57,6 +57,17 @@ public sealed class SensorPalClient(
         logger.LogInformation("Monitoring stopped");
     }
 
+    public async Task<SettingsDto?> GetSettingsAsync()
+    {
+        return await ExecuteAsync(
+            () => _http.GetFromJsonAsync<SettingsDto>($"{_base}/settings"));
+    }
+
+    public async Task SaveSettingsAsync(SettingsDto dto)
+    {
+        await ExecuteAsync(() => _http.PutAsJsonAsync($"{_base}/settings", dto));
+    }
+
     async Task<T> ExecuteAsync<T>(Func<Task<T>> call)
     {
         try
