@@ -34,7 +34,7 @@ public sealed class SensorPalClient(
 
     public async Task<LiveLevelDto?> GetLevelAsync()
     {
-        try { return await _http.GetFromJsonAsync<LiveLevelDto>($"{_base}/monitoring/level"); }
+        try { return await ExecuteAsync(() => _http.GetFromJsonAsync<LiveLevelDto>($"{_base}/monitoring/level")); }
         catch { return null; }
     }
 

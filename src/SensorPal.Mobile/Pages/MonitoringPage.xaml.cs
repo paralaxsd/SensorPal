@@ -6,6 +6,7 @@ public partial class MonitoringPage : ContentPage
 {
     readonly SensorPalClient _client;
     bool _isMonitoring;
+    DateTimeOffset _monitoringStartedAt;
     IDispatcherTimer? _levelTimer;
     IDispatcherTimer? _blinkTimer;
     bool _blinkOn;
@@ -57,6 +58,7 @@ public partial class MonitoringPage : ContentPage
         await _client.StartMonitoringAsync();
 
         _isMonitoring = true;
+        _monitoringStartedAt = DateTimeOffset.UtcNow;
         UpdateToggleUi();
         await LoadSessionsAsync();
     }
@@ -81,6 +83,18 @@ public partial class MonitoringPage : ContentPage
     async Task DoRefreshLevelAsync()
     {
         var level = await _client.GetLevelAsync();
+
+        // Detect server-reset: server responded but is no longer monitoring.
+        // Grace period of 2s after pressing Start to let StartCaptureAsync initialize.
+        if (_isMonitoring
+            && level is not null
+            && !level.ActiveSessionStartedAt.HasValue
+            && DateTimeOffset.UtcNow - _monitoringStartedAt > TimeSpan.FromSeconds(2))
+        {
+            _isMonitoring = false;
+            UpdateToggleUi();
+            await LoadSessionsAsync();
+        }
 
         if (level?.Db is not { } db)
         {

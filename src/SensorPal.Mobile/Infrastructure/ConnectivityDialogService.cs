@@ -126,6 +126,10 @@ public sealed class ConnectivityDialogService(
                 .Create()!;
 
             _activeDialog.Show();
+            // Override button text color — default MAUI theme renders it in an unreadable purple.
+            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210); // Material Blue 700
+            _activeDialog.GetButton(-1)?.SetTextColor(buttonColor); // BUTTON_POSITIVE
+            _activeDialog.GetButton(-2)?.SetTextColor(buttonColor); // BUTTON_NEGATIVE
         });
 
         var result = await tcs.Task;
