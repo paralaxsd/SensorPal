@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SensorPal.Build": {
+      "commandName": "Project",
+      "commandLineArgs": "list-android-devices"
+    }
+  }
+}

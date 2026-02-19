@@ -8,7 +8,11 @@ using Serilog;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using Serilog.Core;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+// ReSharper disable UnusedMember.Local
+// ReSharper disable AllUnderscoreLocalParameterName
 
 [GitHubActions(
     "ci-android", GitHubActionsImage.UbuntuLatest,
@@ -31,12 +35,12 @@ sealed class Build : NukeBuild
     [Parameter("Android device id for deployment (use 'adb devices' to list)")]
     readonly string? DeviceId;
 
-    readonly Lazy<Tool?> _adbTool = new(TryResolveAdbTool);
+    readonly Lazy<Tool?> LazyAdbTool = new(TryResolveAdbTool);
 
     /******************************************************************************************
      * PROPERTIES
      * ***************************************************************************************/
-    Tool? AdbTool => _adbTool.Value;
+    Tool? AdbTool => LazyAdbTool.Value;
     AbsolutePath SolutionFile => RootDirectory / "SensorPal.slnx";
     AbsolutePath MobileProject => RootDirectory / "src" / "SensorPal.Mobile" / "SensorPal.Mobile.csproj";
     AbsolutePath ServerProject => RootDirectory / "src" / "SensorPal.Server" / "SensorPal.Server.csproj";
@@ -116,25 +120,33 @@ sealed class Build : NukeBuild
 
     void ListAllAndroidDevices()
     {
-        TryKillAdbServer();
-        if (AdbTool is { } adb)
-        {
-            adb("devices");
-        }
-        else
-        {
-            Log.Warning("Could not find adb tool, skipping device listing. " +
-                "If you encounter deployment issues, ensure that adb is installed and ANDROID_HOME or ANDROID_SDK_ROOT environment variables are set.");
-        }
+        TryRestartAdbServer();
+
+        RunAdbCommand(adb => adb("devices"));
     }
 
-    void TryKillAdbServer()
+    void TryKillAdbServer() => RunAdbCommand(adb =>
+    {
+        Log.Information("Killing adb server...");
+        adb("kill-server");
+    });
+
+    void TryRestartAdbServer() => RunAdbCommand(adb =>
+    {
+        Log.Information("** Restarting ADB server...**");
+        adb("kill-server");
+
+        Log.Information("Giving ADB some time before restarting...");
+        // otherwise it may throw: "daemon not running; starting now at tcp:5037"
+        Thread.Sleep(250);
+        adb("start-server");
+    });
+
+    void RunAdbCommand(Action<Tool> run)
     {
         if (AdbTool is { } adb)
         {
-            Log.Information("Killing adb server...");
-
-            adb("kill-server");
+            run(adb);
         }
         else
         {
