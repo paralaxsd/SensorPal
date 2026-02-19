@@ -46,7 +46,7 @@
                                    Text="{Binding PeakDb, StringFormat='{0:F1} dBFS'}"
                                    TextColor="OrangeRed" VerticalOptions="Center" />
                             <Label Grid.Row="1" Grid.Column="0"
-                                   Text="{Binding DurationMs, Converter={StaticResource Duration}, StringFormat='Duration: {0}'}"
+                                   Text="{Binding ClipDurationMs, Converter={StaticResource Duration}, StringFormat='Clip: {0}'}"
                                    TextColor="Gray" FontSize="13" />
                             <Button Grid.Row="1" Grid.Column="1"
                                     Text="{Binding ButtonText}"

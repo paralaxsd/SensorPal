@@ -12,6 +12,7 @@ public sealed class EventRowVm(NoiseEventDto evt) : INotifyPropertyChanged
     public DateTimeOffset DetectedAt => evt.DetectedAt;
     public double PeakDb => evt.PeakDb;
     public int DurationMs => evt.DurationMs;
+    public int ClipDurationMs => evt.ClipDurationMs;
     public bool HasClip => evt.HasClip;
 
     bool _isLoading;

@@ -5,5 +5,6 @@ public sealed record NoiseEventDto(
     DateTimeOffset DetectedAt,
     double PeakDb,
     int DurationMs,
+    int ClipDurationMs,
     long BackgroundOffsetMs,
     bool HasClip);

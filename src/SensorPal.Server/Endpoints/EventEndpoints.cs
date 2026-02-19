@@ -42,6 +42,7 @@ static class EventEndpoints
         DetectedAt = new DateTimeOffset(e.DetectedAt, TimeSpan.Zero),
         PeakDb = e.PeakDb,
         DurationMs = e.DurationMs,
+        ClipDurationMs = e.ClipDurationMs,
         BackgroundOffsetMs = e.BackgroundOffsetMs,
         HasClip = e.ClipFile is not null && File.Exists(e.ClipFile)
     };

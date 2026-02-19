@@ -14,6 +14,7 @@ sealed class NoiseEventDto
     public DateTimeOffset DetectedAt { get; init; }
     public double PeakDb { get; init; }
     public int DurationMs { get; init; }
+    public int ClipDurationMs { get; init; }
     public long BackgroundOffsetMs { get; init; }
     public bool HasClip { get; init; }
 }

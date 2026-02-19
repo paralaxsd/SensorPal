@@ -7,6 +7,7 @@ sealed class NoiseEvent
     public DateTime DetectedAt { get; set; }
     public double PeakDb { get; set; }
     public int DurationMs { get; set; }
+    public int ClipDurationMs { get; set; }
     public long BackgroundOffsetMs { get; set; }
     public string? ClipFile { get; set; }
 

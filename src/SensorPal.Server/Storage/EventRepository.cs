@@ -6,7 +6,7 @@ namespace SensorPal.Server.Storage;
 sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
 {
     public async Task<long> SaveEventAsync(long sessionId, DateTime detectedAt,
-        double peakDb, int durationMs, long backgroundOffsetMs, string? clipFile)
+        double peakDb, int durationMs, int clipDurationMs, long backgroundOffsetMs, string? clipFile)
     {
         await using var db = await factory.CreateDbContextAsync();
         var ev = new NoiseEvent
@@ -15,6 +15,7 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
             DetectedAt = detectedAt,
             PeakDb = peakDb,
             DurationMs = durationMs,
+            ClipDurationMs = clipDurationMs,
             BackgroundOffsetMs = backgroundOffsetMs,
             ClipFile = clipFile
         };

@@ -160,22 +160,31 @@ sealed class AudioCaptureService(
 
         _inPostRoll = false;
         _recordingClip = false;
+
+        // Compute clip duration from bytes written before disposing the writer
+        var clipDurationMs = 0;
+        if (_clipWriter is not null && _captureFormat is not null)
+        {
+            var audioBytes = Math.Max(0L, _clipWriter.Length - 44); // subtract WAV header
+            clipDurationMs = (int)(audioBytes * 1000L / _captureFormat.AverageBytesPerSecond);
+        }
+
         _clipWriter?.Dispose();
         _clipWriter = null;
 
         if (_pendingEvent is { } evt)
         {
             _pendingEvent = null;
-            _ = PersistEventAsync(evt.StartedAt, evt.PeakDb, evt.DurationMs);
+            _ = PersistEventAsync(evt.StartedAt, evt.PeakDb, evt.DurationMs, clipDurationMs);
         }
     }
 
-    async Task PersistEventAsync(DateTime startedAt, double peakDb, int durationMs)
+    async Task PersistEventAsync(DateTime startedAt, double peakDb, int durationMs, int clipDurationMs)
     {
         var offsetMs = (long)(startedAt - _backgroundStart).TotalMilliseconds;
         var placeholderPath = storage.GetClipFilePath(0, startedAt);
 
-        var id = await events.SaveEventAsync(_currentSessionId, startedAt, peakDb, durationMs, offsetMs, null);
+        var id = await events.SaveEventAsync(_currentSessionId, startedAt, peakDb, durationMs, clipDurationMs, offsetMs, null);
 
         var finalPath = storage.GetClipFilePath(id, startedAt);
         if (File.Exists(placeholderPath))
