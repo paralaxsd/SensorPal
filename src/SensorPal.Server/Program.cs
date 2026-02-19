@@ -31,9 +31,8 @@ static class Program
     {
         var app = builder.Build();
 
-        var fileVer = Version.Parse(ThisAssembly.AssemblyFileVersion);
-        var displayVersion = new Version(fileVer.Major, fileVer.Minor, fileVer.Build);
-        app.Logger.LogInformation("SensorPal Server {Version}", displayVersion);
+        app.Logger.LogInformation("SensorPal Server {Version} [{CommitId}]",
+            ThisAssembly.AssemblyShortFileVersion, ThisAssembly.GitCommitIdShort);
 
         await EnsureAndMigrateDbAsync(app);
 

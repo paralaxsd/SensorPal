@@ -14,4 +14,12 @@
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="all" />
   </ItemGroup>
+
+  <!-- Injects GitRepositoryUrl, GitBranch, BuildTimestamp into ThisAssembly -->
+  <Import Project="$(MSBuildThisFileDirectory)eng/ThisAssemblyExtensions.props" />
+
+  <!-- Partial ThisAssembly extension — linked into every src/ project -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)src/ThisAssembly.cs" Link="ThisAssembly.cs" />
+  </ItemGroup>
 </Project>

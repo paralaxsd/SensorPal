@@ -17,10 +17,21 @@
                    TextColor="Gray"
                    HorizontalOptions="Center" />
 
-            <Label x:Name="BuildLabel"
+            <Label x:Name="CommitLabel"
+                   FontSize="13"
+                   TextColor="#4A90D9"
+                   TextDecorations="Underline"
+                   HorizontalOptions="Center">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCommitLinkTapped" />
+                </Label.GestureRecognizers>
+            </Label>
+
+            <Label x:Name="BuiltLabel"
                    FontSize="13"
                    TextColor="Gray"
-                   HorizontalOptions="Center" />
+                   HorizontalOptions="Center"
+                   Margin="0,-8,0,0" />
 
             <BoxView HeightRequest="1" Color="Gray" Margin="0,8" Opacity="0.3" />
 
@@ -34,7 +45,7 @@
                    FontSize="13"
                    TextColor="Gray"
                    Margin="0,8,0,0" />
-            <Label Text="https://github.com/paralaxsd/SensorPal"
+            <Label x:Name="RepoLinkLabel"
                    FontSize="14"
                    TextColor="#4A90D9"
                    TextDecorations="Underline">
