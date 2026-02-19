@@ -8,17 +8,21 @@ public partial class EventsPage : ContentPage
 {
     readonly SensorPalClient _client;
     readonly IAudioManager _audio;
+    readonly ConnectivityService _connectivity;
     readonly ILogger<EventsPage> _logger;
 
     IAudioPlayer? _player;
     EventRowVm? _currentVm;
     IDispatcherTimer? _timer;
+    bool _playbackFailed;
     DateOnly _selectedDate = DateOnly.FromDateTime(DateTime.Today);
 
-    public EventsPage(SensorPalClient client, IAudioManager audio, ILogger<EventsPage> logger)
+    public EventsPage(SensorPalClient client, IAudioManager audio,
+        ConnectivityService connectivity, ILogger<EventsPage> logger)
     {
         _client = client;
         _audio = audio;
+        _connectivity = connectivity;
         _logger = logger;
         InitializeComponent();
         DateSelector.Date = DateTime.Today;
@@ -27,13 +31,31 @@ public partial class EventsPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        _connectivity.ConnectivityChanged += OnConnectivityChanged;
         _ = LoadEventsAsync();
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        _connectivity.ConnectivityChanged -= OnConnectivityChanged;
         StopPlayback();
+    }
+
+    void OnConnectivityChanged(bool reachable)
+    {
+        if (!reachable) return;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (_playbackFailed)
+            {
+                _playbackFailed = false;
+                PlaybackPanel.IsVisible = false;
+            }
+
+            _ = LoadEventsAsync();
+        });
     }
 
     void OnDateSelected(object? sender, DateChangedEventArgs e)
@@ -95,6 +117,7 @@ public partial class EventsPage : ContentPage
             _logger.LogError(ex, "Playback failed for event {Id}", id);
             vm.IsLoading = false;
             _currentVm = null;
+            _playbackFailed = true;
             PlaybackLabel.Text = "Playback failed.";
             DownloadSpinner.IsRunning = false;
             DownloadSpinner.IsVisible = false;
@@ -117,6 +140,7 @@ public partial class EventsPage : ContentPage
             _currentVm = null;
         }
 
+        _playbackFailed = false;
         PlaybackPanel.IsVisible = false;
     }
 
