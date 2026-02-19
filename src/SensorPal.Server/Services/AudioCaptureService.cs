@@ -12,11 +12,12 @@ sealed class AudioCaptureService(
     MonitoringStateService stateService,
     SessionRepository sessions,
     EventRepository events,
+    SettingsRepository settings,
     AudioStorage storage,
     ILogger<AudioCaptureService> logger) : IHostedService, IDisposable
 {
     readonly AudioConfig _config = options.Value;
-    readonly int _postRollMs = options.Value.PostRollSeconds * 1000;
+    int _postRollMs;
 
     WasapiCapture? _capture;
     LameMP3FileWriter? _backgroundWriter;
@@ -62,20 +63,23 @@ sealed class AudioCaptureService(
 
     async Task StartCaptureAsync()
     {
+        var s = await settings.GetAsync();
+        _postRollMs = s.PostRollSeconds * 1000;
+
         var device = FindDevice(_config.DeviceName);
         _capture = new WasapiCapture(device);
         _captureFormat = _capture.WaveFormat;
 
-        var preRollBytes = _captureFormat.AverageBytesPerSecond * _config.PreRollSeconds;
+        var preRollBytes = _captureFormat.AverageBytesPerSecond * s.PreRollSeconds;
         _preRoll = new CircularAudioBuffer(preRollBytes);
-        _detector = new NoiseDetector(_config.NoiseThresholdDb, _captureFormat);
+        _detector = new NoiseDetector(s.NoiseThresholdDb, _captureFormat);
 
         _detector.EventStarted += OnEventStarted;
         _detector.EventEnded += OnEventEnded;
 
         _backgroundStart = DateTime.UtcNow;
         var backgroundFile = storage.GetBackgroundFilePath(_backgroundStart);
-        _backgroundWriter = new LameMP3FileWriter(backgroundFile, _captureFormat, _config.BackgroundBitrate);
+        _backgroundWriter = new LameMP3FileWriter(backgroundFile, _captureFormat, s.BackgroundBitrate);
 
         _currentSessionId = await sessions.StartSessionAsync(backgroundFile);
 

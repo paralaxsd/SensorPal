@@ -43,3 +43,9 @@ sealed class AudioDeviceDto
 }
 
 sealed record LiveLevelDto(double? Db, double ThresholdDb, bool IsEventActive, DateTimeOffset? EventActiveSince);
+
+sealed record SettingsDto(
+    double NoiseThresholdDb,
+    int PreRollSeconds,
+    int PostRollSeconds,
+    int BackgroundBitrate);

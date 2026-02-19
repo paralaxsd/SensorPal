@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SensorPal.Server.Storage;
 
@@ -10,9 +11,11 @@ using SensorPal.Server.Storage;
 namespace SensorPal.Server.Migrations
 {
     [DbContext(typeof(SensorPalDbContext))]
-    partial class SensorPalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260219222010_AddAppSettings")]
+    partial class AddAppSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.2");

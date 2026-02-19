@@ -7,4 +7,5 @@ sealed class SensorPalDbContext(DbContextOptions<SensorPalDbContext> options) : 
 {
     public DbSet<MonitoringSession> MonitoringSessions => Set<MonitoringSession>();
     public DbSet<NoiseEvent> NoiseEvents => Set<NoiseEvent>();
+    public DbSet<AppSettings> AppSettings => Set<AppSettings>();
 }

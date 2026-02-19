@@ -71,6 +71,7 @@ static class Program
         // Repositories
         services.AddSingleton<SessionRepository>();
         services.AddSingleton<EventRepository>();
+        services.AddSingleton<SettingsRepository>();
 
         // Core services
         services.AddSingleton<MonitoringStateService>();
@@ -92,5 +93,6 @@ static class Program
         app.MapMonitoringEndpoints();
         app.MapAudioDeviceEndpoints();
         app.MapEventEndpoints();
+        app.MapSettingsEndpoints();
     }
 }
