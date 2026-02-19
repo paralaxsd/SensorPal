@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:conv="clr-namespace:SensorPal.Mobile.Converters"
-             xmlns:models="clr-namespace:SensorPal.Shared.Models;assembly=SensorPal.Shared"
+             xmlns:local="clr-namespace:SensorPal.Mobile.Pages"
              x:Class="SensorPal.Mobile.Pages.EventsPage"
              Title="Events">
 
@@ -11,10 +11,14 @@
         <conv:DurationConverter x:Key="Duration" />
     </ContentPage.Resources>
 
-    <VerticalStackLayout Padding="16" Spacing="12">
+    <Grid Padding="16" RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
         <!-- Date picker -->
-        <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
+        <HorizontalStackLayout Grid.Row="0" Spacing="12" HorizontalOptions="Center" Margin="0,0,0,12">
             <Button Text="◀" WidthRequest="44" Clicked="OnPrevDayClicked" />
             <DatePicker x:Name="DateSelector"
                         Format="dd.MM.yyyy"
@@ -23,13 +27,13 @@
             <Button Text="▶" WidthRequest="44" Clicked="OnNextDayClicked" />
         </HorizontalStackLayout>
 
-        <!-- Event list -->
-        <CollectionView x:Name="EventsView"
+        <!-- Event list — fills remaining space, never resizes -->
+        <CollectionView Grid.Row="1"
+                        x:Name="EventsView"
                         SelectionMode="None"
-                        EmptyView="No noise events for this day."
-                        VerticalOptions="FillAndExpand">
+                        EmptyView="No noise events for this day.">
             <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:NoiseEventDto">
+                <DataTemplate x:DataType="local:EventRowVm">
                     <Border Margin="0,4" Padding="12"
                             StrokeShape="RoundRectangle 8"
                             Stroke="LightGray"
@@ -45,9 +49,10 @@
                                    Text="{Binding DurationMs, Converter={StaticResource Duration}, StringFormat='Duration: {0}'}"
                                    TextColor="Gray" FontSize="13" />
                             <Button Grid.Row="1" Grid.Column="1"
-                                    Text="▶ Play"
+                                    Text="{Binding ButtonText}"
                                     FontSize="13"
                                     IsVisible="{Binding HasClip}"
+                                    IsEnabled="{Binding CanInteract}"
                                     Clicked="OnPlayClicked"
                                     CommandParameter="{Binding Id}" />
                         </Grid>
@@ -56,13 +61,35 @@
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <!-- Playback status -->
-        <Label x:Name="PlaybackLabel"
-               Text=""
-               HorizontalOptions="Center"
-               TextColor="Gray"
-               FontSize="13" />
+        <!-- Playback panel — overlays the list from the top, no layout shift -->
+        <Border Grid.Row="1"
+                x:Name="PlaybackPanel"
+                IsVisible="False"
+                VerticalOptions="Start"
+                Margin="0,0,0,4"
+                Padding="12,8"
+                StrokeShape="RoundRectangle 8"
+                Stroke="Transparent"
+                BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#3A3A3C}">
+            <VerticalStackLayout Spacing="6">
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <ActivityIndicator x:Name="DownloadSpinner"
+                                       IsRunning="False"
+                                       IsVisible="False"
+                                       WidthRequest="18"
+                                       HeightRequest="18"
+                                       VerticalOptions="Center" />
+                    <Label x:Name="PlaybackLabel"
+                           Text=""
+                           FontSize="13"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                <ProgressBar x:Name="PlaybackProgress"
+                             IsVisible="False"
+                             Progress="0" />
+            </VerticalStackLayout>
+        </Border>
 
-    </VerticalStackLayout>
+    </Grid>
 
 </ContentPage>
