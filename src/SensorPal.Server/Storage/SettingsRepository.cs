@@ -7,12 +7,17 @@ namespace SensorPal.Server.Storage;
 
 sealed class SettingsRepository(
     IDbContextFactory<SensorPalDbContext> factory,
-    IOptions<AudioConfig> defaults)
+    IOptions<AudioConfig> defaults,
+    ILogger<SettingsRepository> logger)
 {
+    AppSettings? _cache;
+
     public async Task<AppSettings> GetAsync()
     {
+        if (_cache is not null) return _cache;
+
         await using var db = await factory.CreateDbContextAsync();
-        return await db.AppSettings.FindAsync(1)
+        _cache = await db.AppSettings.FindAsync(1)
             ?? new AppSettings
             {
                 NoiseThresholdDb = defaults.Value.NoiseThresholdDb,
@@ -20,6 +25,7 @@ sealed class SettingsRepository(
                 PostRollSeconds = defaults.Value.PostRollSeconds,
                 BackgroundBitrate = defaults.Value.BackgroundBitrate,
             };
+        return _cache;
     }
 
     public async Task SaveAsync(AppSettings settings)
@@ -41,5 +47,10 @@ sealed class SettingsRepository(
         }
 
         await db.SaveChangesAsync();
+        _cache = settings;
+
+        logger.LogInformation(
+            "Settings updated: Threshold={Threshold:F1} dBFS, PreRoll={Pre}s, PostRoll={Post}s, Bitrate={Bitrate} kbps",
+            settings.NoiseThresholdDb, settings.PreRollSeconds, settings.PostRollSeconds, settings.BackgroundBitrate);
     }
 }

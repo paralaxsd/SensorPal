@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Options;
-using SensorPal.Server.Configuration;
 using SensorPal.Server.Entities;
 using SensorPal.Server.Services;
 using SensorPal.Server.Storage;
@@ -30,14 +28,15 @@ static class MonitoringEndpoints
             return sessions.Select(ToDto).ToList();
         });
 
-        group.MapGet("/level", (AudioCaptureService capture, IOptions<AudioConfig> options) =>
+        group.MapGet("/level", async (AudioCaptureService capture, SettingsRepository settingsRepo) =>
         {
+            var settings = await settingsRepo.GetAsync();
             var eventSince = capture.EventStartedAt.HasValue
                 ? new DateTimeOffset(capture.EventStartedAt.Value, TimeSpan.Zero)
                 : (DateTimeOffset?)null;
             return Results.Ok(new LiveLevelDto(
                 capture.CurrentDb,
-                options.Value.NoiseThresholdDb,
+                settings.NoiseThresholdDb,
                 capture.IsEventActive,
                 eventSince));
         });
