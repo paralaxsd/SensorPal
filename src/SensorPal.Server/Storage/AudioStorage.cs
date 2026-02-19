@@ -16,8 +16,8 @@ sealed class AudioStorage
         Directory.CreateDirectory(_clipsPath);
     }
 
-    public string GetBackgroundFilePath(DateOnly date) =>
-        Path.Combine(_storagePath, $"{date:yyyy-MM-dd}_background.mp3");
+    public string GetBackgroundFilePath(DateTime startedAt) =>
+        Path.Combine(_storagePath, $"{startedAt.ToLocalTime():yyyy-MM-dd_HHmmss}_background.mp3");
 
     public string GetClipFilePath(long eventId, DateTime time) =>
         Path.Combine(_clipsPath, $"{time.ToLocalTime():yyyy-MM-dd_HHmmss}_{eventId}.wav");

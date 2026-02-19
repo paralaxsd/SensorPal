@@ -74,7 +74,7 @@ sealed class AudioCaptureService(
         _detector.EventEnded += OnEventEnded;
 
         _backgroundStart = DateTime.UtcNow;
-        var backgroundFile = storage.GetBackgroundFilePath(DateOnly.FromDateTime(_backgroundStart.ToLocalTime()));
+        var backgroundFile = storage.GetBackgroundFilePath(_backgroundStart);
         _backgroundWriter = new LameMP3FileWriter(backgroundFile, _captureFormat, _config.BackgroundBitrate);
 
         _currentSessionId = await sessions.StartSessionAsync(backgroundFile);
