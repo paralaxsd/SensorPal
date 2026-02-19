@@ -21,7 +21,7 @@
 		<ApplicationTitle>SensorPal.Mobile</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.sensorpal.mobile</ApplicationId>
+		<ApplicationId>org.speckdrumm.sensorpal.mobile</ApplicationId>
 
 		<!-- Versions — set by Nerdbank.GitVersioning via Directory.Build.props -->
 		<ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
