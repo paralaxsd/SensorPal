@@ -85,6 +85,13 @@ static class Program
         var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SensorPalDbContext>>();
         await using var ctx = await db.CreateDbContextAsync();
         await ctx.Database.MigrateAsync();
+
+        // Close any sessions left open by a previous crash
+        var closed = await ctx.MonitoringSessions
+            .Where(s => s.EndedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.EndedAt, DateTime.UtcNow));
+        if (closed > 0)
+            app.Logger.LogWarning("Closed {Count} stale session(s) from previous crash", closed);
     }
 
     static void MapEndpoints(this WebApplication app)

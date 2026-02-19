@@ -4,4 +4,10 @@ namespace SensorPal.Shared.Models;
 /// Current input level from the audio capture device.
 /// Db is null when capture is not active.
 /// </summary>
-public sealed record LiveLevelDto(double? Db, double ThresholdDb, bool IsEventActive, DateTimeOffset? EventActiveSince);
+public sealed record LiveLevelDto(
+    double? Db,
+    double ThresholdDb,
+    bool IsEventActive,
+    DateTimeOffset? EventActiveSince,
+    DateTimeOffset? ActiveSessionStartedAt,
+    int? ActiveSessionEventCount);

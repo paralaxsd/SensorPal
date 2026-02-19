@@ -38,7 +38,9 @@ static class MonitoringEndpoints
                 capture.CurrentDb,
                 settings.NoiseThresholdDb,
                 capture.IsEventActive,
-                eventSince));
+                eventSince,
+                capture.ActiveSessionStartedAt,
+                capture.ActiveSessionEventCount));
         });
     }
 

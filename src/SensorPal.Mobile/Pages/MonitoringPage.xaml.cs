@@ -6,11 +6,9 @@ public partial class MonitoringPage : ContentPage
 {
     readonly SensorPalClient _client;
     bool _isMonitoring;
-    IDispatcherTimer? _pollTimer;
     IDispatcherTimer? _levelTimer;
     IDispatcherTimer? _blinkTimer;
     bool _blinkOn;
-    int _liveEventCount;
     bool _levelRefreshing;
 
     public MonitoringPage(SensorPalClient client)
@@ -59,45 +57,17 @@ public partial class MonitoringPage : ContentPage
         await _client.StartMonitoringAsync();
 
         _isMonitoring = true;
-        _liveEventCount = 0;
         UpdateToggleUi();
         await LoadSessionsAsync();
-
-        _pollTimer = Dispatcher.CreateTimer();
-        _pollTimer.Interval = TimeSpan.FromSeconds(2);
-        _pollTimer.Tick += OnPollTick;
-        _pollTimer.Start();
     }
 
     async Task StopMonitoringAsync()
     {
-        _pollTimer?.Stop();
-        _pollTimer = null;
-
         await _client.StopMonitoringAsync();
 
         _isMonitoring = false;
         UpdateToggleUi();
         await LoadSessionsAsync();
-    }
-
-    void OnPollTick(object? sender, EventArgs e) => _ = RefreshLiveStatsAsync();
-
-    async Task RefreshLiveStatsAsync()
-    {
-        try
-        {
-            var sessions = await _client.GetSessionsAsync();
-            var active = sessions.FirstOrDefault(s => s.IsActive);
-            if (active is null) return;
-
-            _liveEventCount = active.EventCount;
-            var duration = DateTimeOffset.UtcNow - active.StartedAt;
-
-            DurationLabel.Text = duration.ToString(@"hh\:mm\:ss");
-            EventCountLabel.Text = active.EventCount.ToString();
-        }
-        catch { /* silently ignore polling errors */ }
     }
 
     async Task RefreshLevelAsync()
@@ -141,6 +111,13 @@ public partial class MonitoringPage : ContentPage
         else
         {
             EventActiveLabel.IsVisible = false;
+        }
+
+        if (_isMonitoring && level.ActiveSessionStartedAt.HasValue)
+        {
+            var duration = DateTimeOffset.UtcNow - level.ActiveSessionStartedAt.Value;
+            DurationLabel.Text = duration.ToString(@"hh\:mm\:ss");
+            EventCountLabel.Text = (level.ActiveSessionEventCount ?? 0).ToString();
         }
     }
 

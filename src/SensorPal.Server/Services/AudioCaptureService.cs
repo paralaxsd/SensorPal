@@ -28,6 +28,7 @@ sealed class AudioCaptureService(
 
     long _currentSessionId;
     DateTime _backgroundStart;
+    int _sessionEventCount;
 
     // Clip state
     bool _recordingClip;
@@ -41,6 +42,9 @@ sealed class AudioCaptureService(
     public double? CurrentDb => _detector?.CurrentDb;
     public bool IsEventActive => _detector?.IsEventActive ?? false;
     public DateTime? EventStartedAt => _detector?.EventStartedAt;
+    public DateTimeOffset? ActiveSessionStartedAt =>
+        _capture is not null ? new DateTimeOffset(_backgroundStart, TimeSpan.Zero) : null;
+    public int? ActiveSessionEventCount => _capture is not null ? _sessionEventCount : null;
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -77,6 +81,7 @@ sealed class AudioCaptureService(
         _detector.EventStarted += OnEventStarted;
         _detector.EventEnded += OnEventEnded;
 
+        _sessionEventCount = 0;
         _backgroundStart = DateTime.UtcNow;
         var backgroundFile = storage.GetBackgroundFilePath(_backgroundStart);
         _backgroundWriter = new LameMP3FileWriter(backgroundFile, _captureFormat, s.BackgroundBitrate);
@@ -196,6 +201,7 @@ sealed class AudioCaptureService(
 
         await events.UpdateClipFileAsync(id, finalPath);
         await sessions.IncrementEventCountAsync(_currentSessionId);
+        _sessionEventCount++;
     }
 
     static MMDevice FindDevice(string nameSubstring)
