@@ -14,8 +14,8 @@ sealed class AudioConfig
     public int BackgroundBitrate { get; init; } = 64;
     public int ClipBitrate { get; init; } = 128;
     public double NoiseThresholdDb { get; init; } = -30.0;
-    public int PreRollSeconds { get; init; } = 30;
-    public int PostRollSeconds { get; init; } = 30;
+    public int PreRollSeconds { get; init; } = 5;
+    public int PostRollSeconds { get; init; } = 5;
 
     /// <summary>
     /// Relative paths are resolved from the server executable directory.

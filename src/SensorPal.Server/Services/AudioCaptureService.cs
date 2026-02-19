@@ -27,9 +27,15 @@ sealed class AudioCaptureService(
 
     long _currentSessionId;
     DateTime _backgroundStart;
-    DateTime _currentEventStart;
+
+    // Clip state
     bool _recordingClip;
+    bool _inPostRoll;
     int _postRollRemainingMs;
+
+    // Pending event data — held until post-roll expires and clip is finalized
+    record struct PendingEvent(DateTime StartedAt, double PeakDb, int DurationMs);
+    PendingEvent? _pendingEvent;
 
     public double? CurrentDb => _detector?.CurrentDb;
     public bool IsEventActive => _detector?.IsEventActive ?? false;
@@ -113,6 +119,8 @@ sealed class AudioCaptureService(
 
         _clipWriter!.Write(e.Buffer, 0, e.BytesRecorded);
 
+        if (!_inPostRoll) return;
+
         var msRecorded = (int)(e.BytesRecorded * 1000.0 / _captureFormat!.AverageBytesPerSecond);
         _postRollRemainingMs -= msRecorded;
 
@@ -124,11 +132,9 @@ sealed class AudioCaptureService(
     {
         if (_recordingClip) return;
 
-        _currentEventStart = startedAt;
+        _inPostRoll = false;
         _recordingClip = true;
-        _postRollRemainingMs = _postRollMs;
 
-        // Use id=0 as placeholder; will be renamed after DB insert
         var placeholderPath = storage.GetClipFilePath(0, startedAt);
         _clipWriter = new WaveFileWriter(placeholderPath, _captureFormat!);
 
@@ -140,24 +146,32 @@ sealed class AudioCaptureService(
 
     void OnEventEnded(DateTime startedAt, double peakDb, int durationMs)
     {
+        // Hold event data until post-roll expires and clip is finalized
+        _pendingEvent = new PendingEvent(startedAt, peakDb, durationMs);
+        _inPostRoll = true;
         _postRollRemainingMs = _postRollMs;
+
         logger.LogInformation("Noise event ended, duration {Duration}ms, peak {Db:F1} dBFS", durationMs, peakDb);
-        _ = PersistEventAsync(startedAt, peakDb, durationMs);
     }
 
     void FinishClipIfActive()
     {
         if (!_recordingClip) return;
+
+        _inPostRoll = false;
         _recordingClip = false;
         _clipWriter?.Dispose();
         _clipWriter = null;
+
+        if (_pendingEvent is { } evt)
+        {
+            _pendingEvent = null;
+            _ = PersistEventAsync(evt.StartedAt, evt.PeakDb, evt.DurationMs);
+        }
     }
 
     async Task PersistEventAsync(DateTime startedAt, double peakDb, int durationMs)
     {
-        _postRollRemainingMs = 0;
-        FinishClipIfActive();
-
         var offsetMs = (long)(startedAt - _backgroundStart).TotalMilliseconds;
         var placeholderPath = storage.GetClipFilePath(0, startedAt);
 
