@@ -105,6 +105,13 @@ sealed class AudioCaptureService(
         _capture.StopRecording();
         _capture.DataAvailable -= OnDataAvailable;
 
+        if (_detector is not null)
+        {
+            _detector.EventStarted -= OnEventStarted;
+            _detector.EventEnded -= OnEventEnded;
+            _detector = null;
+        }
+
         FinishClipIfActive();
 
         _backgroundWriter?.Flush();

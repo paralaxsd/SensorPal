@@ -34,6 +34,18 @@ static class EventEndpoints
             var stream = File.OpenRead(ev.ClipFile);
             return Results.File(stream, "audio/wav", Path.GetFileName(ev.ClipFile));
         });
+
+        group.MapDelete("/", async (string? date, EventRepository repo, ILogger<Log> logger) =>
+        {
+            var day = date is not null
+                ? DateOnly.Parse(date)
+                : DateOnly.FromDateTime(DateTime.Now);
+
+            var count = await repo.DeleteEventsByDateAsync(day);
+            logger.LogInformation("Deleted {Count} event(s) for {Date}", count, day);
+
+            return Results.Ok(new { Deleted = count });
+        });
     }
 
     static NoiseEventDto ToDto(NoiseEvent e) => new()
@@ -46,4 +58,6 @@ static class EventEndpoints
         BackgroundOffsetMs = e.BackgroundOffsetMs,
         HasClip = e.ClipFile is not null && File.Exists(e.ClipFile)
     };
+
+    class Log;  // placeholder for Log type
 }

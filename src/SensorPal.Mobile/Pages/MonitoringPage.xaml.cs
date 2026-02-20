@@ -99,8 +99,10 @@ public partial class MonitoringPage : ContentPage
         if (level?.Db is not { } db)
         {
             LevelLabel.Text = "— dBFS";
+            LevelLabel.ClearValue(Label.TextColorProperty);
             LevelBar.Progress = 0;
             ThresholdLabel.Text = level is null ? "Threshold: —" : $"Threshold: {level.ThresholdDb:F1} dBFS";
+            EventActiveLabel.IsVisible = false;
             return;
         }
 

@@ -194,6 +194,48 @@ public partial class EventsPage : ContentPage
             : $"0:{t.Seconds:D2}";
     }
 
+    async void OnDeleteDayClicked(object? sender, EventArgs e)
+    {
+        if (!await ConfirmDeleteDayAsync()) return;
+
+        StopPlayback();
+        try
+        {
+            await _client.DeleteEventsByDateAsync(_selectedDate);
+            await LoadEventsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete events for {Date}", _selectedDate);
+        }
+    }
+
+    async Task<bool> ConfirmDeleteDayAsync()
+    {
+        var message = $"Delete all events and clips for {_selectedDate:dd.MM.yyyy}?";
+#if ANDROID
+        var tcs = new TaskCompletionSource<bool>();
+        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+        if (activity is null) return false;
+        activity.RunOnUiThread(() =>
+        {
+            var dialog = new Android.App.AlertDialog.Builder(activity)
+                .SetTitle("Delete Day")!
+                .SetMessage(message)!
+                .SetPositiveButton("Delete", (_, _) => tcs.TrySetResult(true))!
+                .SetNegativeButton("Cancel", (_, _) => tcs.TrySetResult(false))!
+                .Create()!;
+            dialog.Show();
+            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210);
+            dialog.GetButton(-1)?.SetTextColor(buttonColor);
+            dialog.GetButton(-2)?.SetTextColor(buttonColor);
+        });
+        return await tcs.Task;
+#else
+        return await DisplayAlertAsync("Delete Day", message, "Delete", "Cancel");
+#endif
+    }
+
     async Task LoadEventsAsync()
     {
         try

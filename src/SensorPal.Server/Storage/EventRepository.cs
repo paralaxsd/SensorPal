@@ -48,4 +48,25 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
         return await db.NoiseEvents.FindAsync(id);
     }
+
+    public async Task<int> DeleteEventsByDateAsync(DateOnly date)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var start = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local).ToUniversalTime();
+        var end = date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Local).ToUniversalTime();
+
+        var clipFiles = await db.NoiseEvents
+            .Where(e => e.DetectedAt >= start && e.DetectedAt <= end && e.ClipFile != null)
+            .Select(e => e.ClipFile!)
+            .ToListAsync();
+
+        var count = await db.NoiseEvents
+            .Where(e => e.DetectedAt >= start && e.DetectedAt <= end)
+            .ExecuteDeleteAsync();
+
+        foreach (var file in clipFiles.Where(File.Exists))
+            File.Delete(file);
+
+        return count;
+    }
 }

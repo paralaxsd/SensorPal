@@ -85,7 +85,11 @@ static class Program
         var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SensorPalDbContext>>();
         await using var ctx = await db.CreateDbContextAsync();
         await ctx.Database.MigrateAsync();
+        await FixDanglingActiveSessions(app, ctx);
+    }
 
+    static async Task FixDanglingActiveSessions(WebApplication app, SensorPalDbContext ctx)
+    {
         // Close any sessions left open by a previous crash
         var closed = await ctx.MonitoringSessions
             .Where(s => s.EndedAt == null)

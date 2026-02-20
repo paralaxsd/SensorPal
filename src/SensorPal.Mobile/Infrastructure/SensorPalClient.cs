@@ -68,6 +68,11 @@ public sealed class SensorPalClient(
         await ExecuteAsync(() => _http.PutAsJsonAsync($"{_base}/settings", dto));
     }
 
+    public async Task DeleteEventsByDateAsync(DateOnly date)
+    {
+        await ExecuteAsync(() => _http.DeleteAsync($"{_base}/events?date={date:yyyy-MM-dd}"));
+    }
+
     async Task<T> ExecuteAsync<T>(Func<Task<T>> call)
     {
         try

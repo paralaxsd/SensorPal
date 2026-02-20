@@ -18,14 +18,20 @@
         </Grid.RowDefinitions>
 
         <!-- Date picker -->
-        <HorizontalStackLayout Grid.Row="0" Spacing="12" HorizontalOptions="Center" Margin="0,0,0,12">
-            <Button Text="◀" WidthRequest="44" Clicked="OnPrevDayClicked" />
-            <DatePicker x:Name="DateSelector"
-                        Format="dd.MM.yyyy"
-                        DateSelected="OnDateSelected"
-                        VerticalOptions="Center" />
-            <Button Text="▶" WidthRequest="44" Clicked="OnNextDayClicked" />
-        </HorizontalStackLayout>
+        <Grid Grid.Row="0" Margin="0,0,0,12" ColumnDefinitions="44,*,44">
+            <HorizontalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="12">
+                <Button Text="◀" WidthRequest="44" Clicked="OnPrevDayClicked" />
+                <DatePicker x:Name="DateSelector"
+                            Format="dd.MM.yyyy"
+                            DateSelected="OnDateSelected"
+                            VerticalOptions="Center" />
+                <Button Text="▶" WidthRequest="44" Clicked="OnNextDayClicked" />
+            </HorizontalStackLayout>
+            <Button Grid.Column="2" Text="🗑" VerticalOptions="Center"
+                    HeightRequest="44" Padding="0"
+                    BackgroundColor="Transparent" TextColor="OrangeRed"
+                    FontSize="18" Clicked="OnDeleteDayClicked" />
+        </Grid>
 
         <!-- Event list — fills remaining space, never resizes -->
         <CollectionView Grid.Row="1"
