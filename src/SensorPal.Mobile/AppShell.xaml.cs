@@ -24,6 +24,9 @@ public partial class AppShell
 
     public void CheckConnectivityOnResume() => _ = _dialog.CheckOnResumeAsync();
 
+    async void OnLogsClicked(object? sender, EventArgs e)
+        => await Navigation.PushModalAsync(Handler!.MauiContext!.Services.GetRequiredService<LogsPage>());
+
     async void OnSettingsClicked(object? sender, EventArgs e)
         => await Navigation.PushModalAsync(Handler!.MauiContext!.Services.GetRequiredService<SettingsPage>());
 

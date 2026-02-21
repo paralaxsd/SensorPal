@@ -6,6 +6,7 @@
        Title="SensorPal">
 
     <Shell.ToolbarItems>
+        <ToolbarItem Text="Logs" Clicked="OnLogsClicked" Order="Secondary" />
         <ToolbarItem Text="Settings" Clicked="OnSettingsClicked" Order="Secondary" />
         <ToolbarItem Text="About" Clicked="OnAboutClicked" Order="Secondary" />
     </Shell.ToolbarItems>
@@ -17,9 +18,6 @@
         <ShellContent Title="Events"
                       ContentTemplate="{DataTemplate pages:EventsPage}"
                       Route="EventsPage" />
-        <ShellContent Title="Logs"
-                      ContentTemplate="{DataTemplate pages:LogsPage}"
-                      Route="LogsPage" />
     </TabBar>
 
 </Shell>

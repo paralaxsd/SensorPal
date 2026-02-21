@@ -6,6 +6,10 @@
              x:Class="SensorPal.Mobile.Pages.LogsPage"
              Title="Logs">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Close" Clicked="OnCloseClicked" />
+    </ContentPage.ToolbarItems>
+
     <ContentPage.Resources>
         <conv:LogLevelTextConverter x:Key="LevelText" />
         <conv:LogLevelColorConverter x:Key="LevelColor" />
@@ -15,7 +19,8 @@
 
         <CollectionView x:Name="LogsView"
                         Grid.Row="0"
-                        SelectionMode="None"
+                        SelectionMode="Single"
+                        SelectionChanged="OnEntrySelected"
                         EmptyView="No log entries yet.">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="logging:LogEntry">
@@ -54,11 +59,16 @@
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <Button Grid.Row="1"
-                Text="Clear"
-                Margin="16,8"
-                HorizontalOptions="End"
-                Clicked="OnClearClicked" />
+        <HorizontalStackLayout Grid.Row="1"
+                               Margin="16,8"
+                               HorizontalOptions="End"
+                               Spacing="8">
+            <Label Text="Tap entry to copy"
+                   TextColor="Gray"
+                   FontSize="11"
+                   VerticalOptions="Center" />
+            <Button Text="Clear" Clicked="OnClearClicked" />
+        </HorizontalStackLayout>
 
     </Grid>
 
