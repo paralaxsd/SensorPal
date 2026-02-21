@@ -62,16 +62,16 @@
 
 	<ItemGroup>
 	  <EmbeddedResource Include="appsettings.json" />
-    <EmbeddedResource Include="appsettings.Android.json"
-                      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+    <EmbeddedResource Include="appsettings.Android.json" 
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
       <DependentUpon>appsettings.json</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="appsettings.Android.Emulator.json"
-                      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
       <DependentUpon>appsettings.json</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="appsettings.Windows.json"
-                      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+      Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
       <DependentUpon>appsettings.json</DependentUpon>
     </EmbeddedResource>
 	</ItemGroup>
@@ -83,6 +83,7 @@
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
 		<PackageReference Include="Microsoft.Maui.Controls" VersionOverride="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+		<PackageReference Include="Plugin.LocalNotification" />
 		<PackageReference Include="Plugin.Maui.Audio" />
 	</ItemGroup>
 

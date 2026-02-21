@@ -1,10 +1,12 @@
 using SensorPal.Mobile.Infrastructure;
+using SensorPal.Mobile.Services;
 
 namespace SensorPal.Mobile.Pages;
 
 public partial class MonitoringPage : ContentPage
 {
     readonly SensorPalClient _client;
+    readonly NotificationService _notificationService;
     bool _isMonitoring;
     DateTimeOffset _monitoringStartedAt;
     IDispatcherTimer? _levelTimer;
@@ -12,9 +14,10 @@ public partial class MonitoringPage : ContentPage
     bool _blinkOn;
     bool _levelRefreshing;
 
-    public MonitoringPage(SensorPalClient client)
+    public MonitoringPage(SensorPalClient client, NotificationService notificationService)
     {
         _client = client;
+        _notificationService = notificationService;
         InitializeComponent();
     }
 
@@ -135,6 +138,10 @@ public partial class MonitoringPage : ContentPage
             DurationLabel.Text = duration.ToString(@"hh\:mm\:ss");
             EventCountLabel.Text = (level.ActiveSessionEventCount ?? 0).ToString();
         }
+
+        // Feed level data to the notification service so Windows (which has no
+        // foreground service) can fire toast notifications from the UI poll loop.
+        await _notificationService.NotifyIfNewEventAsync(level);
     }
 
     void UpdateToggleUi()

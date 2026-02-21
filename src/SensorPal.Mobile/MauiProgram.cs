@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Plugin.LocalNotification;
 using Plugin.Maui.Audio;
 using SensorPal.Mobile.Infrastructure;
 using SensorPal.Mobile.Logging;
 using SensorPal.Mobile.Pages;
+using SensorPal.Mobile.Services;
 using System.Reflection;
 
 namespace SensorPal.Mobile;
@@ -20,6 +22,12 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .AddAudio()
+#if !WINDOWS
+            // Plugin.LocalNotification has no Windows target; on Windows we use
+            // WinRT directly. Calling UseLocalNotification() on Windows resolves
+            // to the neutral net10.0 DLL where Current is null and the call crashes.
+            .UseLocalNotification()
+#endif
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -93,8 +101,11 @@ public static class MauiProgram
         builder.Services.AddSingleton<ConnectivityService>();
         builder.Services.AddSingleton<ConnectivityDialogService>();
         builder.Services.AddSingleton<AppShell>();
+        // Singleton: stateless, HttpClient should be long-lived, and
+        // NotificationService (also singleton) depends on it.
+        builder.Services.AddSingleton<SensorPalClient>();
+        builder.Services.AddSingleton<NotificationService>();
         builder.Services.AddTransient<MainPage>();
-        builder.Services.AddTransient<SensorPalClient>();
         builder.Services.AddTransient<MonitoringPage>();
         builder.Services.AddTransient<EventsPage>();
         builder.Services.AddTransient<LogsPage>();

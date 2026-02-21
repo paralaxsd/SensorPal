@@ -60,6 +60,19 @@
 
             </Grid>
 
+            <!-- Notifications -->
+            <Label Text="Notifications" FontAttributes="Bold" FontSize="18" />
+
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Text="Enable Notifications" VerticalOptions="Center" />
+                <Switch x:Name="NotificationsSwitch"
+                        Grid.Column="1"
+                        Toggled="OnNotificationsToggled" />
+            </Grid>
+            <Label x:Name="NotificationsHintLabel"
+                   Text="Get notified when a noise event is detected."
+                   TextColor="Gray" FontSize="12" />
+
             <!-- Save -->
             <Button x:Name="SaveButton" Text="Save" Clicked="OnSaveClicked" />
 
