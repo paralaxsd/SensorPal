@@ -1,5 +1,6 @@
 using SensorPal.Mobile.Infrastructure;
 using SensorPal.Mobile.Services;
+using SensorPal.Shared.Models;
 
 namespace SensorPal.Mobile.Pages;
 
@@ -179,12 +180,22 @@ public partial class MonitoringPage : ContentPage
         StatusLabel.Opacity = 1.0;
     }
 
+    async void OnSessionSelected(object? sender, SelectionChangedEventArgs e)
+    {
+        if (e.CurrentSelection.FirstOrDefault() is not MonitoringSessionDto session) return;
+        SessionsView.SelectedItem = null;
+
+        var date = session.StartedAt.LocalDateTime.ToString("yyyy-MM-dd");
+        await Shell.Current.GoToAsync($"//EventsPage?date={date}");
+    }
+
     async Task LoadSessionsAsync()
     {
         try
         {
             var sessions = await _client.GetSessionsAsync();
-            SessionsView.ItemsSource = sessions;
+            SessionsView.ItemsSource = sessions.Take(5).ToList();
+            SessionsLabel.Text = $"Recent Sessions ({sessions.Count} total)";
         }
         catch { /* server may not be running */ }
     }

@@ -4,7 +4,7 @@ using SensorPal.Mobile.Infrastructure;
 
 namespace SensorPal.Mobile.Pages;
 
-public partial class EventsPage : ContentPage
+public partial class EventsPage : ContentPage, IQueryAttributable
 {
     readonly SensorPalClient _client;
     readonly IAudioManager _audio;
@@ -16,6 +16,8 @@ public partial class EventsPage : ContentPage
     IDispatcherTimer? _timer;
     bool _playbackFailed;
     DateOnly _selectedDate = DateOnly.FromDateTime(DateTime.Today);
+    DateOnly? _pendingDate;
+    bool _hasAppeared;
 
     public EventsPage(SensorPalClient client, IAudioManager audio,
         ConnectivityService connectivity, ILogger<EventsPage> logger)
@@ -28,16 +30,46 @@ public partial class EventsPage : ContentPage
         DateSelector.Date = DateTime.Today;
     }
 
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (!query.TryGetValue("date", out var val)
+            || !DateOnly.TryParse(val?.ToString(), out var date)) return;
+
+        // On the very first Shell visit OnAppearing fires before ApplyQueryAttributes,
+        // so _hasAppeared is already true — apply immediately. On subsequent visits the
+        // order reverses, so store as pending for OnAppearing to pick up.
+        if (_hasAppeared)
+        {
+            DateSelector.Date = date.ToDateTime(TimeOnly.MinValue);
+        }
+        else
+        {
+            _pendingDate = date;
+        }
+    }
+
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        _hasAppeared = true;
         _connectivity.ConnectivityChanged += OnConnectivityChanged;
-        _ = LoadEventsAsync();
+
+        if (_pendingDate.HasValue)
+        {
+            // Setting DateSelector.Date fires OnDateSelected → LoadEventsAsync.
+            DateSelector.Date = _pendingDate.Value.ToDateTime(TimeOnly.MinValue);
+            _pendingDate = null;
+        }
+        else
+        {
+            _ = LoadEventsAsync();
+        }
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        _hasAppeared = false;
         _connectivity.ConnectivityChanged -= OnConnectivityChanged;
         StopPlayback();
     }

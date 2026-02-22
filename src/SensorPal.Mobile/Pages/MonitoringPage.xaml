@@ -67,9 +67,10 @@
             </VerticalStackLayout>
 
             <!-- Past sessions -->
-            <Label Text="Recent Sessions" FontAttributes="Bold" FontSize="16" />
+            <Label x:Name="SessionsLabel" FontAttributes="Bold" FontSize="16" />
             <CollectionView x:Name="SessionsView"
-                            SelectionMode="None"
+                            SelectionMode="Single"
+                            SelectionChanged="OnSessionSelected"
                             EmptyView="No sessions yet.">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:MonitoringSessionDto">
