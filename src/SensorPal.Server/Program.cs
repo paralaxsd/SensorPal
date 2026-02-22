@@ -11,7 +11,13 @@ static class Program
 {
     public static async Task Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            Args = args,
+            // Resolve appsettings.json from the executable directory, not the
+            // working directory, so the server can be started from anywhere.
+            ContentRootPath = AppContext.BaseDirectory
+        });
         builder.PrepareServices();
 
         var app = await builder.BuildApplicationAsync();
