@@ -26,6 +26,7 @@ sealed class MonitoringSessionDto
     public DateTimeOffset? EndedAt { get; init; }
     public int EventCount { get; init; }
     public bool IsActive { get; init; }
+    public bool HasAudio { get; init; }
 }
 
 sealed class LiveSessionStatsDto

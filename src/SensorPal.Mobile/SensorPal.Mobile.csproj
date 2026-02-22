@@ -81,8 +81,9 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" />
 		<PackageReference Include="Microsoft.Extensions.Options" />
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
-		<PackageReference Include="Microsoft.Maui.Controls" VersionOverride="$(MauiVersion)" />
+		<PackageReference Include="Microsoft.Maui.Controls" VersionOverride="10.0.41" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+		<PackageReference Include="CommunityToolkit.Maui.MediaElement" />
 		<PackageReference Include="Plugin.LocalNotification" />
 		<PackageReference Include="Plugin.Maui.Audio" />
 	</ItemGroup>

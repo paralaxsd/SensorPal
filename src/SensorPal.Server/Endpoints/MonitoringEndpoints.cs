@@ -28,6 +28,32 @@ static class MonitoringEndpoints
             return sessions.Select(ToDto).ToList();
         });
 
+        group.MapGet("/{id}/audio", async (long id, SessionRepository repo, AudioStorage storage,
+            ILogger<Log> logger) =>
+        {
+            logger.LogInformation("Audio requested for session {SessionId}", id);
+            var session = await repo.GetCurrentSessionAsync(id);
+
+            if (session is null)
+            {
+                logger.LogWarning("Audio request: session {SessionId} not found in DB", id);
+                return Results.NotFound();
+            }
+
+            if (session.BackgroundFile is not { } path)
+            {
+                logger.LogWarning("Audio request: session {SessionId} has no BackgroundFile", id);
+                return Results.NotFound();
+            }
+
+            var exists = File.Exists(path);
+            logger.LogInformation("Audio request: session {SessionId} → file={Path} exists={Exists}",
+                id, path, exists);
+
+            if (!exists) return Results.NotFound();
+            return Results.File(path, "audio/mpeg", enableRangeProcessing: true);
+        });
+
         group.MapGet("/level", async (AudioCaptureService capture, SettingsRepository settingsRepo) =>
         {
             var settings = await settingsRepo.GetAsync();
@@ -44,12 +70,15 @@ static class MonitoringEndpoints
         });
     }
 
+    class Log;
+
     static MonitoringSessionDto ToDto(MonitoringSession s) => new()
     {
         Id = s.Id,
         StartedAt = new DateTimeOffset(s.StartedAt, TimeSpan.Zero),
         EndedAt = s.EndedAt.HasValue ? new DateTimeOffset(s.EndedAt.Value, TimeSpan.Zero) : null,
         EventCount = s.EventCount,
-        IsActive = s.EndedAt is null
+        IsActive = s.EndedAt is null,
+        HasAudio = s.BackgroundFile is not null
     };
 }

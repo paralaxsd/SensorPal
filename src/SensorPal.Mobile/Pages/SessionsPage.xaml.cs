@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using SensorPal.Mobile.Infrastructure;
 using SensorPal.Shared.Models;
 
@@ -6,10 +7,12 @@ namespace SensorPal.Mobile.Pages;
 public partial class SessionsPage : ContentPage
 {
     readonly SensorPalClient _client;
+    readonly ILogger<SessionsPage> _logger;
 
-    public SessionsPage(SensorPalClient client)
+    public SessionsPage(SensorPalClient client, ILogger<SessionsPage> logger)
     {
         _client = client;
+        _logger = logger;
         InitializeComponent();
     }
 
@@ -43,6 +46,17 @@ public partial class SessionsPage : ContentPage
             await Navigation.PopModalAsync();
             await Shell.Current.GoToAsync($"//EventsPage?date={date}");
         });
+    }
+
+    async void OnPlaySessionClicked(object? sender, EventArgs e)
+    {
+        if (sender is not Button btn || btn.CommandParameter is not MonitoringSessionDto session) return;
+        var url = _client.GetSessionAudioUrl(session.Id);
+        _logger.LogInformation("Opening player for session {SessionId} ({StartedAt}), url={Url}",
+            session.Id, session.StartedAt.LocalDateTime, url);
+        var player = Handler!.MauiContext!.Services.GetRequiredService<SessionPlayerPage>();
+        player.Load(session, url);
+        await Navigation.PushModalAsync(player);
     }
 
     async void OnCloseClicked(object? sender, EventArgs e)

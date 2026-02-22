@@ -5,7 +5,8 @@ public sealed record MonitoringSessionDto(
     DateTimeOffset StartedAt,
     DateTimeOffset? EndedAt,
     int EventCount,
-    bool IsActive);
+    bool IsActive,
+    bool HasAudio = false);
 
 public sealed record LiveSessionStatsDto(
     TimeSpan Duration,

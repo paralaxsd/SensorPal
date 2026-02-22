@@ -180,6 +180,14 @@ public partial class MonitoringPage : ContentPage
         StatusLabel.Opacity = 1.0;
     }
 
+    async void OnPlaySessionClicked(object? sender, EventArgs e)
+    {
+        if (sender is not Button btn || btn.CommandParameter is not MonitoringSessionDto session) return;
+        var player = Handler!.MauiContext!.Services.GetRequiredService<SessionPlayerPage>();
+        player.Load(session, _client.GetSessionAudioUrl(session.Id));
+        await Navigation.PushModalAsync(player);
+    }
+
     async void OnShowAllSessionsClicked(object? sender, EventArgs e)
     {
         var page = Handler!.MauiContext!.Services.GetRequiredService<SessionsPage>();

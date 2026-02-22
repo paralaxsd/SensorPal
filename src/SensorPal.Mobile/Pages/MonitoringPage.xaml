@@ -74,7 +74,7 @@
                             EmptyView="No sessions yet.">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:MonitoringSessionDto">
-                        <Grid Padding="0,8" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Grid Padding="0,8" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                             <VerticalStackLayout Grid.Column="0">
                                 <Label Text="{Binding StartedAt, Converter={StaticResource LocalDateTime}}"
                                        FontAttributes="Bold" />
@@ -84,6 +84,15 @@
                             <Label Grid.Column="1"
                                    Text="{Binding IsActive, Converter={StaticResource BoolToActiveLabel}}"
                                    VerticalOptions="Center" />
+                            <Button Grid.Column="2"
+                                    Text="▶"
+                                    FontSize="13"
+                                    BackgroundColor="Transparent"
+                                    TextColor="DodgerBlue"
+                                    IsVisible="{Binding HasAudio}"
+                                    CommandParameter="{Binding .}"
+                                    Clicked="OnPlaySessionClicked"
+                                    Padding="4,0" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

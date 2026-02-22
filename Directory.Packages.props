@@ -21,6 +21,7 @@
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+    <PackageVersion Include="CommunityToolkit.Maui.MediaElement" Version="8.0.0" />
     <PackageVersion Include="Plugin.Maui.Audio" Version="4.0.0" />
     <!-- Microsoft.Maui.Controls uses $(MauiVersion) which is SDK-managed; kept as VersionOverride in csproj -->
   </ItemGroup>

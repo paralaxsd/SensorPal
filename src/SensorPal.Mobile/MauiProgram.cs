@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Plugin.LocalNotification;
@@ -21,6 +22,15 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
+#if ANDROID
+#pragma warning disable CA1416
+            .If(global::Android.OS.Build.VERSION.SdkInt >= global::Android.OS.BuildVersionCodes.O,
+                b => b.UseMauiCommunityToolkitMediaElement(isAndroidForegroundServiceEnabled: false))
+#pragma warning restore CA1416
+#else
+            // Foreground service is Android-only, but annoyingly we still need to tell Maui:
+            .UseMauiCommunityToolkitMediaElement(isAndroidForegroundServiceEnabled: false)
+#endif
             .AddAudio()
 #if !WINDOWS
             // Plugin.LocalNotification has no Windows target; on Windows we use
@@ -109,6 +119,7 @@ public static class MauiProgram
         builder.Services.AddTransient<MonitoringPage>();
         builder.Services.AddTransient<EventsPage>();
         builder.Services.AddTransient<SessionsPage>();
+        builder.Services.AddTransient<SessionPlayerPage>();
         builder.Services.AddTransient<LogsPage>();
         builder.Services.AddTransient<SettingsPage>();
     }
