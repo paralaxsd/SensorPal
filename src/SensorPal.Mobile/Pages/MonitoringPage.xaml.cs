@@ -180,6 +180,12 @@ public partial class MonitoringPage : ContentPage
         StatusLabel.Opacity = 1.0;
     }
 
+    async void OnShowAllSessionsClicked(object? sender, EventArgs e)
+    {
+        var page = Handler!.MauiContext!.Services.GetRequiredService<SessionsPage>();
+        await Navigation.PushModalAsync(page);
+    }
+
     async void OnSessionSelected(object? sender, SelectionChangedEventArgs e)
     {
         if (e.CurrentSelection.FirstOrDefault() is not MonitoringSessionDto session) return;

@@ -39,7 +39,6 @@ sealed class SessionRepository(IDbContextFactory<SensorPalDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
         return await db.MonitoringSessions
             .OrderByDescending(s => s.Id)
-            .Take(20)
             .ToListAsync();
     }
 

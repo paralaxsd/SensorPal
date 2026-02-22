@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:conv="clr-namespace:SensorPal.Mobile.Converters"
+             xmlns:models="clr-namespace:SensorPal.Shared.Models;assembly=SensorPal.Shared"
+             x:Class="SensorPal.Mobile.Pages.SessionsPage">
+
+    <ContentPage.Resources>
+        <conv:BoolToStringConverter x:Key="BoolToActiveLabel" TrueValue="● Active" FalseValue="Done" />
+        <conv:LocalDateTimeConverter x:Key="LocalDateTime" Format="dd.MM.yyyy HH:mm" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto, *, Auto">
+
+        <!-- Header -->
+        <Label Grid.Row="0"
+               Text="All Sessions"
+               FontSize="20"
+               FontAttributes="Bold"
+               Margin="16,16,16,8" />
+
+        <CollectionView Grid.Row="1"
+                        x:Name="SessionsView"
+                        SelectionMode="Single"
+                        SelectionChanged="OnSessionSelected"
+                        EmptyView="No sessions yet.">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:MonitoringSessionDto">
+                    <Grid Padding="16,8" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label Text="{Binding StartedAt, Converter={StaticResource LocalDateTime}}"
+                                   FontAttributes="Bold" />
+                            <Label Text="{Binding EventCount, StringFormat='{0} event(s)'}"
+                                   TextColor="Gray" FontSize="13" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1"
+                               Text="{Binding IsActive, Converter={StaticResource BoolToActiveLabel}}"
+                               VerticalOptions="Center" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Footer -->
+        <Button Grid.Row="2"
+                Text="Close"
+                HorizontalOptions="End"
+                Margin="16,8"
+                Clicked="OnCloseClicked" />
+
+    </Grid>
+
+</ContentPage>

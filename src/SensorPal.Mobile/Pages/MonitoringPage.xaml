@@ -89,6 +89,14 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
+            <Button Text="Show all →"
+                    HorizontalOptions="End"
+                    FontSize="13"
+                    BackgroundColor="Transparent"
+                    TextColor="DodgerBlue"
+                    Padding="0,4"
+                    Clicked="OnShowAllSessionsClicked" />
+
         </VerticalStackLayout>
     </ScrollView>
 
