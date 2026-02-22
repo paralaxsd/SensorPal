@@ -57,6 +57,7 @@ public sealed class ConnectivityDialogService(
 
     async Task ShowOfflineDialogAsync()
     {
+        //return; // Disable the dialog for now while we investigate some reports of it not dismissing properly.
         if (_dialogVisible)
         {
             logger.LogWarning("Already showing connectivity dialog, skipping");

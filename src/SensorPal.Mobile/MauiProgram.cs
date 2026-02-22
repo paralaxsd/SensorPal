@@ -1,6 +1,7 @@
 using CommunityToolkit.Maui;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Plugin.LocalNotification;
 using Plugin.Maui.Audio;
 using SensorPal.Mobile.Infrastructure;
@@ -77,8 +78,11 @@ public static class MauiProgram
 
     static void RegisterConfigBindings(MauiAppBuilder builder)
     {
-        builder.Services.Configure<ServerConfig>(
-            builder.Configuration.GetRequiredSection(nameof(ServerConfig)));
+        // Use direct key lookup instead of reflection-based ConfigurationBinder so that
+        // this code is safe under PublishTrimmed=true (AOT builds).
+        var baseUrl = builder.Configuration["ServerConfig:BaseUrl"]
+            ?? throw new InvalidOperationException("ServerConfig:BaseUrl is required in appsettings");
+        builder.Services.AddSingleton(Options.Create(new ServerConfig { BaseUrl = baseUrl }));
     }
 
     static void AddLogging(MauiAppBuilder builder)

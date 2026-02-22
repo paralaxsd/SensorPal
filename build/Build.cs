@@ -35,6 +35,9 @@ sealed class Build : NukeBuild
     [Parameter("Android device id for deployment (use 'adb devices' to list)")]
     readonly string? DeviceId;
 
+    [Parameter("Enable AOT compilation for Android deployment")]
+    readonly bool Aot;
+
     readonly Lazy<Tool?> LazyAdbTool = new(TryResolveAdbTool);
 
     /******************************************************************************************
@@ -110,12 +113,31 @@ sealed class Build : NukeBuild
     {
         TryKillAdbServer();
 
+        DotNetClean(s => s
+            .SetProject(MobileProject)
+            .SetConfiguration(Configuration));
+
         // The Android Install target is documented at https://learn.microsoft.com/en-us/dotnet/android/building-apps/build-targets#install
         // Also note that we embed deviceArg into the DotNet call using the "nq" format specifier to avoid double quoting -
         // we want the final command to look like: dotnet build /p:AdbTarget="-s <device id>".
-        var deviceArg = string.IsNullOrWhiteSpace(DeviceId) ?
+        // We further disable the Mono interpreter for AOT builds.
+        // Also see: https://learn.microsoft.com/en-us/dotnet/maui/macios/interpreter?view=net-maui-10.0 and
+        // https://learn.microsoft.com/en-us/dotnet/android/messages/xa0119
+        var deployToDefaultDevice = string.IsNullOrWhiteSpace(DeviceId);
+        var deviceArg = deployToDefaultDevice ?
             "" : $" /p:AdbTarget=\"-s {DeviceId}\"";
-        DotNet($"build {MobileProject} -t:Clean -t:Install -f net10.0-android -c {Configuration}{deviceArg:nq}");
+        var aotArg = Aot ? " /p:RunAOTCompilation=true /p:EmbedAssembliesIntoApk=true /p:PublishTrimmed=true /p:UseInterpreter=false" : "";
+
+        if (!deployToDefaultDevice)
+        {
+            Log.Information("Deploying to device with ID: {DeviceId}", DeviceId);
+        }
+        if (Aot)
+        {
+            Log.Information("AOT compilation enabled as per user request.");
+        }
+
+        DotNet($"build {MobileProject} -t:Clean -t:Install -f net10.0-android -c {Configuration}{deviceArg:nq}{aotArg:nq}");
     }
 
     void ListAllAndroidDevices()

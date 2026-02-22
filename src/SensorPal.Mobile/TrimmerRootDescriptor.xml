@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Trimmer root descriptor: tells the IL linker to preserve types that are instantiated
+  via reflection at runtime (e.g. by the MAUI XAML runtime loader) and would otherwise
+  be removed by PublishTrimmed=true in AOT builds.
+-->
+<linker>
+  <!-- MediaElement is constructed via reflection by the XAML runtime loader -->
+  <assembly fullname="CommunityToolkit.Maui.MediaElement">
+    <type fullname="CommunityToolkit.Maui.Views.MediaElement" preserve="all" />
+  </assembly>
+</linker>

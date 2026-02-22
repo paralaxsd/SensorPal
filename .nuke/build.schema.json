@@ -106,6 +106,10 @@
   "allOf": [
     {
       "properties": {
+        "Aot": {
+          "type": "boolean",
+          "description": "Enable AOT compilation for Android deployment"
+        },
         "Configuration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)",

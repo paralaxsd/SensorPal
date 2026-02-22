@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace SensorPal.Mobile.Pages;
 
 public partial class AboutPage : ContentPage
@@ -9,6 +11,7 @@ public partial class AboutPage : ContentPage
         CommitLabel.Text = $"{ThisAssembly.GitCommitIdShort} on {ThisAssembly.GitBranch}";
         BuiltLabel.Text = ThisAssembly.GitCommitDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
         RepoLinkLabel.Text = ThisAssembly.RepositoryUrl;
+        RuntimeLabel.Text = RuntimeFeature.IsDynamicCodeCompiled ? "AOT" : "Interpreter";
     }
 
     async void OnCloseClicked(object? sender, EventArgs e)

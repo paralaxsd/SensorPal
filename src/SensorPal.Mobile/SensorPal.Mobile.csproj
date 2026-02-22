@@ -58,6 +58,7 @@
 
 	<ItemGroup>
 	  <None Remove="appsettings.json" />
+	  <TrimmerRootDescriptor Include="TrimmerRootDescriptor.xml" />
 	</ItemGroup>
 
 	<ItemGroup>
