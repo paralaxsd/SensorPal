@@ -16,10 +16,8 @@
     <PackageVersion Include="Plugin.LocalNotification" Version="13.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.12.46" />
     <!-- Mobile -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.3" />
     <PackageVersion Include="CommunityToolkit.Maui.MediaElement" Version="8.0.0" />
     <PackageVersion Include="Plugin.Maui.Audio" Version="4.0.0" />
