@@ -92,7 +92,8 @@
                                     IsVisible="{Binding HasAudio}"
                                     CommandParameter="{Binding .}"
                                     Clicked="OnPlaySessionClicked"
-                                    Padding="4,0" />
+                                    Padding="4,0"
+                                    ToolTipProperties.Text="Play continuous background recording for this session" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

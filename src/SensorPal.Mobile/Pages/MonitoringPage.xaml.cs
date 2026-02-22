@@ -111,7 +111,7 @@ public partial class MonitoringPage : ContentPage
         }
 
         var aboveThreshold = db >= level.ThresholdDb;
-        var progress = Math.Clamp((db + 60.0) / 60.0, 0.0, 1.0);
+        var progress = Math.Clamp((db + 90.0) / 90.0, 0.0, 1.0);
 
         LevelLabel.Text = $"{db:F1} dBFS";
         if (aboveThreshold)
@@ -208,7 +208,7 @@ public partial class MonitoringPage : ContentPage
         try
         {
             var sessions = await _client.GetSessionsAsync();
-            SessionsView.ItemsSource = sessions.Take(5).ToList();
+            SessionsView.ItemsSource = sessions.Take(4).ToList();
             SessionsLabel.Text = $"Recent Sessions ({sessions.Count} total)";
         }
         catch { /* server may not be running */ }

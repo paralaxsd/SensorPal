@@ -14,19 +14,28 @@ static class MonitoringEndpoints
         {
             state.Start();
             return Results.Ok();
-        });
+        })
+        .WithSummary("Start a monitoring session")
+        .WithDescription("Transitions the server from Idle to Monitoring. " +
+            "Starts WASAPI audio capture, continuous background MP3 recording, and noise event detection.");
 
         group.MapPost("/stop", (MonitoringStateService state) =>
         {
             state.Stop();
             return Results.Ok();
-        });
+        })
+        .WithSummary("Stop the active monitoring session")
+        .WithDescription("Transitions from Monitoring back to Idle. " +
+            "Finalizes the background MP3 file and persists the session record to the database.");
 
         group.MapGet("/sessions", async (SessionRepository repo) =>
         {
             var sessions = await repo.GetSessionsAsync();
             return sessions.Select(ToDto).ToList();
-        });
+        })
+        .WithSummary("List all monitoring sessions")
+        .WithDescription("Returns all past and active monitoring sessions, newest first. " +
+            "HasAudio indicates whether a streamable background MP3 is available.");
 
         group.MapGet("/{id}/audio", async (long id, SessionRepository repo, AudioStorage storage,
             ILogger<Log> logger) =>
@@ -52,7 +61,10 @@ static class MonitoringEndpoints
 
             if (!exists) return Results.NotFound();
             return Results.File(path, "audio/mpeg", enableRangeProcessing: true);
-        });
+        })
+        .WithSummary("Stream background MP3 for a session")
+        .WithDescription("Streams the continuous background MP3 recorded during the monitoring session. " +
+            "Supports HTTP Range requests for seeking. Returns 404 if no background file was recorded.");
 
         group.MapGet("/level", async (AudioCaptureService capture, SettingsRepository settingsRepo) =>
         {
@@ -67,7 +79,11 @@ static class MonitoringEndpoints
                 eventSince,
                 capture.ActiveSessionStartedAt,
                 capture.ActiveSessionEventCount));
-        });
+        })
+        .WithSummary("Live input level and event state")
+        .WithDescription("Returns the current RMS input level in dBFS, the configured threshold, " +
+            "whether a noise event is currently active, and live session statistics. " +
+            "Db is null when monitoring is not active. Poll at ~150 ms for a responsive meter.");
     }
 
     class Log;

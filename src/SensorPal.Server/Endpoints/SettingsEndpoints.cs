@@ -11,7 +11,10 @@ static class SettingsEndpoints
         {
             var s = await repo.GetAsync();
             return new SettingsDto(s.NoiseThresholdDb, s.PreRollSeconds, s.PostRollSeconds, s.BackgroundBitrate);
-        });
+        })
+        .WithSummary("Get noise detection settings")
+        .WithDescription("Returns the current noise detection configuration: threshold (dBFS), " +
+            "pre/post-roll durations for WAV clips, and background MP3 bitrate.");
 
         app.MapPut("/settings", async (SettingsDto dto, SettingsRepository repo) =>
         {
@@ -23,6 +26,9 @@ static class SettingsEndpoints
                 BackgroundBitrate = dto.BackgroundBitrate,
             });
             return Results.NoContent();
-        });
+        })
+        .WithSummary("Update noise detection settings")
+        .WithDescription("Persists updated settings to the SQLite database. Changes take effect immediately " +
+            "on the next noise detection cycle without restarting the server.");
     }
 }

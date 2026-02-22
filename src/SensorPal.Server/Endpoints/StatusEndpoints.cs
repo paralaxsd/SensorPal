@@ -14,6 +14,9 @@ static class StatusEndpoints
             StartedAt = startedAt,
             Now = DateTimeOffset.Now,
             Mode = state.State.ToString()
-        });
+        })
+        .WithSummary("Server health and current monitoring mode")
+        .WithDescription("Returns the server name, start time, current time and monitoring state (Idle / Monitoring). " +
+            "Used by the mobile app as a connectivity ping.");
     }
 }
