@@ -273,10 +273,12 @@ public partial class EventsPage : ContentPage, IQueryAttributable
         try
         {
             var evts = await _client.GetEventsAsync(_selectedDate);
+            AuthErrorLabel.IsVisible = _client.IsAuthError;
             EventsView.ItemsSource = evts.Select(e => new EventRowVm(e)).ToList();
         }
         catch
         {
+            AuthErrorLabel.IsVisible = _client.IsAuthError;
             EventsView.ItemsSource = Array.Empty<EventRowVm>();
         }
     }

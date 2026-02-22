@@ -52,8 +52,9 @@ public partial class SettingsPage : ContentPage
                 BitratePicker.SelectedIndex = Array.IndexOf(BitrateOptions, dto.BackgroundBitrate)
                     is var idx && idx >= 0 ? idx : 1;
 
-                // Notifications are client-side only (Preferences), never synced to server.
+                // Notifications and API key are client-side only (Preferences), never synced to server.
                 NotificationsSwitch.IsToggled = _notificationService.IsEnabled;
+                ApiKeyEntry.Text = Preferences.Get("ApiKey", "");
             }
             finally
             {
@@ -128,6 +129,9 @@ public partial class SettingsPage : ContentPage
         }
     }
 
+    void OnCancelClicked(object? sender, EventArgs e)
+        => _ = Navigation.PopModalAsync();
+
     async void OnSaveClicked(object? sender, EventArgs e)
     {
         if (_loading) return;
@@ -146,6 +150,9 @@ public partial class SettingsPage : ContentPage
                 BackgroundBitrate: bitrate);
 
             await _client.SaveSettingsAsync(dto);
+
+            _client.SetApiKey(ApiKeyEntry.Text.Trim());
+
             SaveButton.Text = "Saved ✓";
 
             await Task.Delay(800);

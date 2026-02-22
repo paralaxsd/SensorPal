@@ -28,5 +28,20 @@
         "DebugTarget": "Pixel 7 - API 36.0 (Android 16.0 - API 36)"
       }
     ]
+  },
+  {
+    "Name": "Server + Mobile [Win] (Production)",
+    "Projects": [
+      {
+        "Path": "src\\SensorPal.Server\\SensorPal.Server.csproj",
+        "Action": "Start",
+        "DebugTarget": "http [Production]"
+      },
+      {
+        "Path": "src\\SensorPal.Mobile\\SensorPal.Mobile.csproj",
+        "Action": "Start",
+        "DebugTarget": "Windows Machine"
+      }
+    ]
   }
 ]

@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SensorPal.Shared.Models;
@@ -5,13 +6,38 @@ using System.Net.Http.Json;
 
 namespace SensorPal.Mobile.Infrastructure;
 
-public sealed class SensorPalClient(
-    IOptions<ServerConfig> config,
-    ConnectivityService connectivity,
-    ILogger<SensorPalClient> logger)
+public sealed class SensorPalClient
 {
-    readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
-    readonly string _base = config.Value.BaseUrl;
+    readonly HttpClient _http;
+    readonly string _base;
+    readonly ConnectivityService _connectivity;
+    readonly ILogger<SensorPalClient> _logger;
+
+    public SensorPalClient(
+        IOptions<ServerConfig> config,
+        ConnectivityService connectivity,
+        ILogger<SensorPalClient> logger)
+    {
+        _connectivity = connectivity;
+        _logger = logger;
+        _base = config.Value.BaseUrl;
+        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+
+        var key = Preferences.Get("ApiKey", "");
+        if (!string.IsNullOrEmpty(key))
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
+    }
+
+    public bool IsAuthError { get; private set; }
+
+    public void SetApiKey(string? key)
+    {
+        IsAuthError = false;
+        Preferences.Set("ApiKey", key ?? "");
+        _http.DefaultRequestHeaders.Authorization = key is { Length: > 0 }
+            ? new AuthenticationHeaderValue("Bearer", key)
+            : null;
+    }
 
     public Task<string> GetStatusAsync()
         => ExecuteAsync(() => _http.GetStringAsync($"{_base}/status"));
@@ -50,13 +76,13 @@ public sealed class SensorPalClient(
     public async Task StartMonitoringAsync()
     {
         await ExecuteAsync(() => _http.PostAsync($"{_base}/monitoring/start", null));
-        logger.LogInformation("Monitoring started");
+        _logger.LogInformation("Monitoring started");
     }
 
     public async Task StopMonitoringAsync()
     {
         await ExecuteAsync(() => _http.PostAsync($"{_base}/monitoring/stop", null));
-        logger.LogInformation("Monitoring stopped");
+        _logger.LogInformation("Monitoring stopped");
     }
 
     public async Task<SettingsDto?> GetSettingsAsync()
@@ -80,13 +106,22 @@ public sealed class SensorPalClient(
         try
         {
             var result = await call();
-            connectivity.ReportResult(true);
+            _connectivity.ReportResult(true);
+            IsAuthError = false;
             return result;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            // 401 means the server is reachable but the API key is wrong or missing.
+            // Do NOT report offline — the user needs to navigate to Settings to fix the key.
+            IsAuthError = true;
+            _logger.LogWarning("API request unauthorized — open Settings and enter the API key");
+            throw;
         }
         catch (Exception ex)
         {
-            connectivity.ReportResult(false);
-            logger.LogError("HTTP request failed: {Message}", ex.Message);
+            _connectivity.ReportResult(false);
+            _logger.LogError("HTTP request failed: {Message}", ex.Message);
             throw;
         }
     }

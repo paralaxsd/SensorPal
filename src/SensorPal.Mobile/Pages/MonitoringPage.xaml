@@ -21,6 +21,14 @@
                    FontAttributes="Bold"
                    HorizontalOptions="Center" />
 
+            <!-- Auth error banner (shown when API key is missing or wrong) -->
+            <Label x:Name="AuthErrorLabel"
+                   IsVisible="False"
+                   Text="⚠ API key not configured — open the Settings tab"
+                   TextColor="OrangeRed"
+                   FontSize="13"
+                   HorizontalTextAlignment="Center" />
+
             <!-- Toggle button -->
             <Button x:Name="ToggleButton"
                     Text="Start Monitoring"

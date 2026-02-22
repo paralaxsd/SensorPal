@@ -14,6 +14,7 @@
     <Grid Padding="16" RowSpacing="0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -33,8 +34,18 @@
                     FontSize="18" Clicked="OnDeleteDayClicked" />
         </Grid>
 
+        <!-- Auth error banner -->
+        <Label Grid.Row="1"
+               x:Name="AuthErrorLabel"
+               IsVisible="False"
+               Text="⚠ API key not configured — open the Settings tab"
+               TextColor="OrangeRed"
+               FontSize="13"
+               HorizontalTextAlignment="Center"
+               Margin="0,0,0,8" />
+
         <!-- Event list — fills remaining space, never resizes -->
-        <CollectionView Grid.Row="1"
+        <CollectionView Grid.Row="2"
                         x:Name="EventsView"
                         SelectionMode="None"
                         EmptyView="No noise events for this day.">
@@ -68,7 +79,7 @@
         </CollectionView>
 
         <!-- Playback panel — overlays the list from the top, no layout shift -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 x:Name="PlaybackPanel"
                 IsVisible="False"
                 VerticalOptions="Start"

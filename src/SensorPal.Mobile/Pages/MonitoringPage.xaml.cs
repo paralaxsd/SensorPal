@@ -100,6 +100,8 @@ public partial class MonitoringPage : ContentPage
             await LoadSessionsAsync();
         }
 
+        AuthErrorLabel.IsVisible = _client.IsAuthError;
+
         if (level?.Db is not { } db)
         {
             LevelLabel.Text = "— dBFS";

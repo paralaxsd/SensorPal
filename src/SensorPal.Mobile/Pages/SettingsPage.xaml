@@ -73,8 +73,30 @@
                    Text="Get notified when a noise event is detected."
                    TextColor="Gray" FontSize="12" />
 
-            <!-- Save -->
-            <Button x:Name="SaveButton" Text="Save" Clicked="OnSaveClicked" />
+            <!-- Security -->
+            <Label Text="Security" FontAttributes="Bold" FontSize="18" />
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="API Key" VerticalOptions="Center" />
+                <Entry x:Name="ApiKeyEntry"
+                       Placeholder="Paste key from server console"
+                       FontFamily="Courier New"
+                       FontSize="12" />
+                <Label Text="Enter the API key shown in the server log on first launch."
+                       TextColor="Gray" FontSize="12" />
+            </VerticalStackLayout>
+
+            <!-- Actions -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Text="Cancel"
+                        BackgroundColor="Transparent"
+                        TextColor="Gray"
+                        Clicked="OnCancelClicked" />
+                <Button Grid.Column="1"
+                        x:Name="SaveButton"
+                        Text="Save"
+                        Clicked="OnSaveClicked" />
+            </Grid>
 
             <Label Text="Changes take effect at the start of the next monitoring session."
                    TextColor="Gray" FontSize="12" HorizontalOptions="Center"

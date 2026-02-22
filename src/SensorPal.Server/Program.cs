@@ -41,6 +41,7 @@ static class Program
             ThisAssembly.AssemblyShortFileVersion, ThisAssembly.GitCommitIdShort);
 
         await EnsureAndMigrateDbAsync(app);
+        await LogApiKeyAsync(app);
 
         if (app.Environment.IsDevelopment())
         {
@@ -104,8 +105,42 @@ static class Program
             app.Logger.LogWarning("Closed {Count} stale session(s) from previous crash", closed);
     }
 
+    static async Task LogApiKeyAsync(WebApplication app)
+    {
+        var settings = await app.Services.GetRequiredService<SettingsRepository>().GetAsync();
+        app.Logger.LogWarning("API Key (copy into mobile app Settings): {ApiKey}", settings.ApiKey);
+    }
+
     static void MapEndpoints(this WebApplication app)
     {
+        // Auth middleware: require Bearer token on all endpoints except /status and dev-only docs.
+        // Set "DisableApiKey": true in appsettings.Development.json to bypass auth locally (Scalar, curl).
+        var disableApiKey = app.Configuration.GetValue<bool>("DisableApiKey");
+        app.Use(async (ctx, next) =>
+        {
+            if (!disableApiKey)
+            {
+                var path = ctx.Request.Path.Value ?? "";
+                var isPublic = path.Equals("/status", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/openapi", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/scalar", StringComparison.OrdinalIgnoreCase);
+
+                if (!isPublic)
+                {
+                    var settings = ctx.RequestServices.GetRequiredService<SettingsRepository>();
+                    var s = await settings.GetAsync();
+                    if (!ctx.Request.Headers.TryGetValue("Authorization", out var header)
+                        || header.ToString() != $"Bearer {s.ApiKey}")
+                    {
+                        ctx.Response.StatusCode = 401;
+                        return;
+                    }
+                }
+            }
+
+            await next(ctx);
+        });
+
         app.MapStatusEndpoints();
         app.MapMonitoringEndpoints();
         app.MapAudioDeviceEndpoints();

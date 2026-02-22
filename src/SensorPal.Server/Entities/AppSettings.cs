@@ -8,4 +8,6 @@ sealed class AppSettings
     public int PreRollSeconds { get; set; }
     public int PostRollSeconds { get; set; }
     public int BackgroundBitrate { get; set; }
+
+    public string? ApiKey { get; set; }
 }

@@ -43,11 +43,28 @@ dotnet run --project src/SensorPal.Server
 
 The server starts on `http://localhost:5000`. The SQLite database and recordings are created in `src/SensorPal.Server/recordings/` by default.
 
+### 4. Note the API key
+
+On the very first start, the server generates a random API key and prints it to the console:
+
+```
+warn: SensorPal.Server.Storage.SettingsRepository[0]
+      API Key generated — copy this into the mobile app Settings: <your-key-here>
+```
+
+Copy this key — you will need it in the mobile app. The key is stored in the SQLite database and is not regenerated on subsequent restarts.
+
 ---
 
 ## Mobile App Setup (Android)
 
-### 1. Set the server address
+### 1. Enter the API key
+
+Open the app → **Settings** tab → scroll to **Security** → paste the key from the server console → **Save**.
+
+All API calls include this key as `Authorization: Bearer <key>`. The `/status` endpoint is intentionally public (used for the connectivity check).
+
+### 2. Set the server address
 
 Edit `src/SensorPal.Mobile/appsettings.Android.json`:
 
@@ -61,7 +78,7 @@ Edit `src/SensorPal.Mobile/appsettings.Android.json`:
 
 Replace `192.168.1.X` with your PC's LAN IP (`ipconfig` → IPv4 Address).
 
-### 2. Deploy to device
+### 3. Deploy to device
 
 Enable **USB Debugging** on the phone: Settings → About → tap Build Number 7× → Developer Options → USB Debugging.
 
