@@ -182,47 +182,53 @@ public partial class MonitoringPage : ContentPage
         await _notificationService.NotifyIfNewEventAsync(level);
     }
 
+    // Button visual appearances — defined once, reused across states.
+    static readonly (string Text, Color Color)
+        BtnToggleStart  = ("Start Monitoring",  Colors.DodgerBlue),
+        BtnToggleStop   = ("Stop Monitoring",   Colors.DarkRed),
+        BtnCalibrateOff = ("Calibrate",         Color.FromArgb("#555555")),
+        BtnCalibrateOn  = ("Stop Calibrating",  Colors.DarkOrange);
+
+    readonly record struct PageUiState(
+        string StatusText, Color StatusColor,
+        (string Text, Color Color) Toggle, bool ToggleEnabled,
+        (string Text, Color Color) Calibrate, bool CalibrateEnabled,
+        bool LiveStatsVisible, bool Blink);
+
+    static readonly PageUiState IdleUi = new(
+        "● Idle", Colors.Gray,
+        BtnToggleStart, ToggleEnabled: true,
+        BtnCalibrateOff, CalibrateEnabled: true,
+        LiveStatsVisible: false, Blink: false);
+
+    static readonly PageUiState MonitoringUi = new(
+        "● Monitoring", Colors.Red,
+        BtnToggleStop, ToggleEnabled: true,
+        BtnCalibrateOff, CalibrateEnabled: false,
+        LiveStatsVisible: true, Blink: true);
+
+    static readonly PageUiState CalibratingUi = new(
+        "● Calibrating", Colors.DarkOrange,
+        BtnToggleStart, ToggleEnabled: false,
+        BtnCalibrateOn, CalibrateEnabled: true,
+        LiveStatsVisible: false, Blink: true);
+
     void UpdateToggleUi()
     {
-        if (_isCalibrating)
-        {
-            StatusLabel.Text = "● Calibrating";
-            StatusLabel.TextColor = Colors.DarkOrange;
-            ToggleButton.Text = "Start Monitoring";
-            ToggleButton.BackgroundColor = Colors.DodgerBlue;
-            ToggleButton.IsEnabled = false;
-            CalibrateButton.Text = "Stop Calibrating";
-            CalibrateButton.BackgroundColor = Colors.DarkOrange;
-            LiveStatsPanel.IsVisible = false;
-            StartBlinkTimer();
-        }
-        else if (_isMonitoring)
-        {
-            StatusLabel.Text = "● Monitoring";
-            StatusLabel.TextColor = Colors.Red;
-            ToggleButton.Text = "Stop Monitoring";
-            ToggleButton.BackgroundColor = Colors.DarkRed;
-            ToggleButton.IsEnabled = true;
-            CalibrateButton.Text = "Calibrate";
-            CalibrateButton.BackgroundColor = Color.FromArgb("#555555");
-            CalibrateButton.IsEnabled = false;
-            LiveStatsPanel.IsVisible = true;
-            StartBlinkTimer();
-        }
-        else
-        {
-            StatusLabel.Text = "● Idle";
-            StatusLabel.TextColor = Colors.Gray;
-            ToggleButton.Text = "Start Monitoring";
-            ToggleButton.BackgroundColor = Colors.DodgerBlue;
-            ToggleButton.IsEnabled = true;
-            CalibrateButton.Text = "Calibrate";
-            CalibrateButton.BackgroundColor = Color.FromArgb("#555555");
-            CalibrateButton.IsEnabled = true;
-            LiveStatsPanel.IsVisible = false;
-            StopBlinkTimer();
-        }
+        var ui = _isCalibrating ? CalibratingUi : _isMonitoring ? MonitoringUi : IdleUi;
 
+        StatusLabel.Text = ui.StatusText;
+        StatusLabel.TextColor = ui.StatusColor;
+
+        (ToggleButton.Text, ToggleButton.BackgroundColor) = ui.Toggle;
+        ToggleButton.IsEnabled = ui.ToggleEnabled;
+
+        (CalibrateButton.Text, CalibrateButton.BackgroundColor) = ui.Calibrate;
+        CalibrateButton.IsEnabled = ui.CalibrateEnabled;
+
+        LiveStatsPanel.IsVisible = ui.LiveStatsVisible;
+
+        if (ui.Blink) StartBlinkTimer(); else StopBlinkTimer();
         StatusLabel.Opacity = 1.0;
     }
 
