@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SensorPal.Mobile.Extensions;
 
 namespace SensorPal.Mobile.Infrastructure;
 
@@ -10,8 +11,10 @@ public sealed class ConnectivityService(
     /******************************************************************************************
      * FIELDS
      * ***************************************************************************************/
-    string _statusUrl = $"{config.Value.BaseUrl}/status";
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(3) };
+    readonly IOptions<ServerConfig> _config = config;
+    readonly ILogger<ConnectivityService> _logger = logger;
+
     CancellationTokenSource? _cts;
     bool _disposed;
 
@@ -23,6 +26,16 @@ public sealed class ConnectivityService(
     public bool IsServerReachable { get; private set; } = true;
 
     public event Action<bool>? ConnectivityChanged;
+
+    string BaseUrl
+    {
+        get
+        {
+            var saved = Preferences.Get("ServerUrl", "");
+            return saved.HasContent ? saved : _config.Value.BaseUrl;
+        }
+    }
+    string StatusUrl => $"{BaseUrl}/status";
 
     /******************************************************************************************
      * METHODS
@@ -38,14 +51,18 @@ public sealed class ConnectivityService(
     public async Task<bool> CheckNowAsync()
     {
         bool reachable;
+        _logger.LogDebug("Pinging {Url}", StatusUrl);
         try
         {
-            using var response = await _http.GetAsync(_statusUrl);
+            using var response = await _http.GetAsync(StatusUrl);
             reachable = response.IsSuccessStatusCode;
+            _logger.LogDebug("Ping result: {StatusCode} → reachable={Reachable}",
+                (int)response.StatusCode, reachable);
         }
-        catch
+        catch (Exception ex)
         {
             reachable = false;
+            _logger.LogDebug("Ping failed: {Error}", ex.Message);
         }
 
         UpdateState(reachable);
@@ -53,8 +70,6 @@ public sealed class ConnectivityService(
     }
 
     public void ReportResult(bool reachable) => UpdateState(reachable);
-
-    public void UpdateStatusUrl(string baseUrl) => _statusUrl = $"{baseUrl}/status";
 
     public void Dispose()
     {
@@ -71,17 +86,17 @@ public sealed class ConnectivityService(
         IsServerReachable = reachable;
 
         if (reachable)
-            logger.LogInformation("Server connectivity restored");
+            _logger.LogInformation("Server connectivity restored");
         else
-            logger.LogWarning("Server unreachable");
+            _logger.LogWarning("Server unreachable");
 
         ConnectivityChanged?.Invoke(reachable);
     }
 
     async Task RunLoopAsync(CancellationToken ct)
     {
-        logger.LogInformation("Connectivity monitor started ({Interval} min interval)",
-            (int)CheckInterval.TotalMinutes);
+        _logger.LogInformation("Connectivity monitor started — pinging {Url} every {Interval} min",
+            StatusUrl, (int)CheckInterval.TotalMinutes);
         await CheckNowAsync();
 
         using var timer = new PeriodicTimer(CheckInterval);
