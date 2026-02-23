@@ -3,18 +3,20 @@ namespace SensorPal.Server.Services;
 /// <summary>
 /// Thread-safe circular byte buffer for holding a fixed window of audio pre-roll data.
 /// </summary>
-sealed class CircularAudioBuffer
+sealed class CircularAudioBuffer(int capacityBytes)
 {
-    readonly byte[] _buffer;
-    int _writePos;
-    bool _filled;
+    /******************************************************************************************
+     * FIELDS
+     * ***************************************************************************************/
+    readonly byte[] _buffer = new byte[capacityBytes];
     readonly Lock _lock = new();
 
-    public CircularAudioBuffer(int capacityBytes)
-    {
-        _buffer = new byte[capacityBytes];
-    }
+    int _writePos;
+    bool _filled;
 
+    /******************************************************************************************
+     * METHODS
+     * ***************************************************************************************/
     public void Add(byte[] data, int offset, int count)
     {
         lock (_lock)
@@ -40,7 +42,9 @@ sealed class CircularAudioBuffer
         }
     }
 
-    /// <summary>Returns a contiguous snapshot of the buffer contents in chronological order.</summary>
+    /// <summary>
+    /// Returns a contiguous snapshot of the buffer contents in chronological order.
+    /// </summary>
     public byte[] GetSnapshot()
     {
         lock (_lock)

@@ -78,12 +78,32 @@ static class MonitoringEndpoints
                 capture.IsEventActive,
                 eventSince,
                 capture.ActiveSessionStartedAt,
-                capture.ActiveSessionEventCount));
+                capture.ActiveSessionEventCount,
+                capture.IsCalibrating));
         })
         .WithSummary("Live input level and event state")
         .WithDescription("Returns the current RMS input level in dBFS, the configured threshold, " +
             "whether a noise event is currently active, and live session statistics. " +
             "Db is null when monitoring is not active. Poll at ~150 ms for a responsive meter.");
+
+        group.MapPost("/calibrate/start", (MonitoringStateService state) =>
+        {
+            if (state.IsMonitoring)
+                return Results.Conflict("Stop monitoring before starting calibration.");
+            state.StartCalibration();
+            return Results.Ok();
+        })
+        .WithSummary("Start calibration mode")
+        .WithDescription("Starts WASAPI capture and RMS measurement without recording or event detection. " +
+            "Use the live level endpoint to tune the noise threshold. Only callable from Idle.");
+
+        group.MapPost("/calibrate/stop", (MonitoringStateService state) =>
+        {
+            state.StopCalibration();
+            return Results.Ok();
+        })
+        .WithSummary("Stop calibration mode")
+        .WithDescription("Stops capture and returns to Idle.");
     }
 
     class Log;

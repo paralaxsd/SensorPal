@@ -8,15 +8,15 @@ using SensorPal.Server.Storage;
 namespace SensorPal.Server.Services;
 
 sealed class AudioCaptureService(
-    IOptions<AudioConfig> options,
-    MonitoringStateService stateService,
-    SessionRepository sessions,
-    EventRepository events,
-    SettingsRepository settings,
-    AudioStorage storage,
+    IOptions<AudioConfig> options, MonitoringStateService stateService, SessionRepository sessions,
+    EventRepository events, SettingsRepository settings, AudioStorage storage,
     ILogger<AudioCaptureService> logger) : IHostedService, IDisposable
 {
+    /******************************************************************************************
+     * FIELDS
+     * ***************************************************************************************/
     readonly AudioConfig _config = options.Value;
+
     int _postRollMs;
 
     WasapiCapture? _capture;
@@ -39,17 +39,31 @@ sealed class AudioCaptureService(
     record struct PendingEvent(DateTime StartedAt, double PeakDb, int DurationMs);
     PendingEvent? _pendingEvent;
 
+    bool _calibrating;
+
+    /******************************************************************************************
+     * PROPERTIES
+     * ***************************************************************************************/
     public double? CurrentDb => _detector?.CurrentDb;
     public bool IsEventActive => _detector?.IsEventActive ?? false;
     public DateTime? EventStartedAt => _detector?.EventStartedAt;
-    public DateTimeOffset? ActiveSessionStartedAt =>
-        _capture is not null ? new DateTimeOffset(_backgroundStart, TimeSpan.Zero) : null;
-    public int? ActiveSessionEventCount => _capture is not null ? _sessionEventCount : null;
+    public bool IsCalibrating => _calibrating;
 
+    // Null during calibration — no session is active.
+    public DateTimeOffset? ActiveSessionStartedAt =>
+        _capture is { } && !_calibrating ? new DateTimeOffset(_backgroundStart, TimeSpan.Zero) : null;
+    public int? ActiveSessionEventCount =>
+        _capture is not null && !_calibrating ? _sessionEventCount : null;
+
+    /******************************************************************************************
+     * METHODS
+     * ***************************************************************************************/
     public Task StartAsync(CancellationToken cancellationToken)
     {
         stateService.MonitoringStarted += OnMonitoringStarted;
         stateService.MonitoringStopped += OnMonitoringStopped;
+        stateService.CalibrationStarted += OnCalibrationStarted;
+        stateService.CalibrationStopped += OnCalibrationStopped;
         return Task.CompletedTask;
     }
 
@@ -57,6 +71,8 @@ sealed class AudioCaptureService(
     {
         stateService.MonitoringStarted -= OnMonitoringStarted;
         stateService.MonitoringStopped -= OnMonitoringStopped;
+        stateService.CalibrationStarted -= OnCalibrationStarted;
+        stateService.CalibrationStopped -= OnCalibrationStopped;
         StopCapture();
         return Task.CompletedTask;
     }
@@ -64,6 +80,10 @@ sealed class AudioCaptureService(
     void OnMonitoringStarted() => Task.Run(StartCaptureAsync);
 
     void OnMonitoringStopped() => StopCapture();
+
+    void OnCalibrationStarted() => Task.Run(StartCalibrateAsync);
+
+    void OnCalibrationStopped() => StopCalibrate();
 
     async Task StartCaptureAsync()
     {
@@ -125,6 +145,42 @@ sealed class AudioCaptureService(
         logger.LogInformation("Recording stopped, session #{Id} closed", _currentSessionId);
     }
 
+    async Task StartCalibrateAsync()
+    {
+        var s = await settings.GetAsync();
+
+        var device = FindDevice(_config.DeviceName);
+        _capture = new WasapiCapture(device);
+        _captureFormat = _capture.WaveFormat;
+        _detector = new NoiseDetector(s.NoiseThresholdDb, _captureFormat);
+        _calibrating = true;
+
+        _capture.DataAvailable += OnDataAvailableCalibrate;
+        _capture.StartRecording();
+
+        logger.LogInformation(
+            "Calibration started on '{Device}', format: {Ch}ch {Rate}Hz {Bits}bit",
+            device.FriendlyName, _captureFormat.Channels, _captureFormat.SampleRate,
+            _captureFormat.BitsPerSample);
+    }
+
+    void StopCalibrate()
+    {
+        if (_capture is null) return;
+
+        _capture.StopRecording();
+        _capture.DataAvailable -= OnDataAvailableCalibrate;
+        _detector = null;
+        _capture.Dispose();
+        _capture = null;
+        _calibrating = false;
+
+        logger.LogInformation("Calibration stopped");
+    }
+
+    void OnDataAvailableCalibrate(object? sender, WaveInEventArgs e)
+        => _detector!.Process(e.Buffer, 0, e.BytesRecorded);
+
     void OnDataAvailable(object? sender, WaveInEventArgs e)
     {
         _preRoll!.Add(e.Buffer, 0, e.BytesRecorded);
@@ -179,7 +235,7 @@ sealed class AudioCaptureService(
 
         // Compute clip duration from bytes written before disposing the writer
         var clipDurationMs = 0;
-        if (_clipWriter is not null && _captureFormat is not null)
+        if (_clipWriter is { } && _captureFormat is { })
         {
             var audioBytes = Math.Max(0L, _clipWriter.Length - 44); // subtract WAV header
             clipDurationMs = (int)(audioBytes * 1000L / _captureFormat.AverageBytesPerSecond);

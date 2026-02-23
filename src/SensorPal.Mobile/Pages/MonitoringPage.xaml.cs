@@ -9,6 +9,7 @@ public partial class MonitoringPage : ContentPage
     readonly SensorPalClient _client;
     readonly NotificationService _notificationService;
     bool _isMonitoring;
+    bool _isCalibrating;
     DateTimeOffset _monitoringStartedAt;
     IDispatcherTimer? _levelTimer;
     IDispatcherTimer? _blinkTimer;
@@ -57,6 +58,32 @@ public partial class MonitoringPage : ContentPage
         catch { /* connectivity dialog handles unreachable-server cases */ }
     }
 
+    async void OnCalibrateClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (_isCalibrating)
+                await StopCalibrationAsync();
+            else
+                await StartCalibrationAsync();
+        }
+        catch { /* connectivity dialog handles unreachable-server cases */ }
+    }
+
+    async Task StartCalibrationAsync()
+    {
+        await _client.StartCalibrationAsync();
+        _isCalibrating = true;
+        UpdateToggleUi();
+    }
+
+    async Task StopCalibrationAsync()
+    {
+        await _client.StopCalibrationAsync();
+        _isCalibrating = false;
+        UpdateToggleUi();
+    }
+
     async Task StartMonitoringAsync()
     {
         await _client.StartMonitoringAsync();
@@ -88,11 +115,19 @@ public partial class MonitoringPage : ContentPage
     {
         var level = await _client.GetLevelAsync();
 
+        // Sync calibration state from server (handles server-restart mid-session).
+        if (_isCalibrating && level is not null && !level.IsCalibrating)
+        {
+            _isCalibrating = false;
+            UpdateToggleUi();
+        }
+
         // Detect server-reset: server responded but is no longer monitoring.
         // Grace period of 2s after pressing Start to let StartCaptureAsync initialize.
         if (_isMonitoring
             && level is not null
             && !level.ActiveSessionStartedAt.HasValue
+            && !level.IsCalibrating
             && DateTimeOffset.UtcNow - _monitoringStartedAt > TimeSpan.FromSeconds(2))
         {
             _isMonitoring = false;
@@ -149,17 +184,46 @@ public partial class MonitoringPage : ContentPage
 
     void UpdateToggleUi()
     {
-        StatusLabel.Text = _isMonitoring ? "● Monitoring" : "● Idle";
-        StatusLabel.TextColor = _isMonitoring ? Colors.Red : Colors.Gray;
-        StatusLabel.Opacity = 1.0;
-        ToggleButton.Text = _isMonitoring ? "Stop Monitoring" : "Start Monitoring";
-        ToggleButton.BackgroundColor = _isMonitoring ? Colors.DarkRed : Colors.DodgerBlue;
-        LiveStatsPanel.IsVisible = _isMonitoring;
-
-        if (_isMonitoring)
+        if (_isCalibrating)
+        {
+            StatusLabel.Text = "● Calibrating";
+            StatusLabel.TextColor = Colors.DarkOrange;
+            ToggleButton.Text = "Start Monitoring";
+            ToggleButton.BackgroundColor = Colors.DodgerBlue;
+            ToggleButton.IsEnabled = false;
+            CalibrateButton.Text = "Stop Calibrating";
+            CalibrateButton.BackgroundColor = Colors.DarkOrange;
+            LiveStatsPanel.IsVisible = false;
             StartBlinkTimer();
+        }
+        else if (_isMonitoring)
+        {
+            StatusLabel.Text = "● Monitoring";
+            StatusLabel.TextColor = Colors.Red;
+            ToggleButton.Text = "Stop Monitoring";
+            ToggleButton.BackgroundColor = Colors.DarkRed;
+            ToggleButton.IsEnabled = true;
+            CalibrateButton.Text = "Calibrate";
+            CalibrateButton.BackgroundColor = Color.FromArgb("#555555");
+            CalibrateButton.IsEnabled = false;
+            LiveStatsPanel.IsVisible = true;
+            StartBlinkTimer();
+        }
         else
+        {
+            StatusLabel.Text = "● Idle";
+            StatusLabel.TextColor = Colors.Gray;
+            ToggleButton.Text = "Start Monitoring";
+            ToggleButton.BackgroundColor = Colors.DodgerBlue;
+            ToggleButton.IsEnabled = true;
+            CalibrateButton.Text = "Calibrate";
+            CalibrateButton.BackgroundColor = Color.FromArgb("#555555");
+            CalibrateButton.IsEnabled = true;
+            LiveStatsPanel.IsVisible = false;
             StopBlinkTimer();
+        }
+
+        StatusLabel.Opacity = 1.0;
     }
 
     void StartBlinkTimer()

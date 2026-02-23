@@ -10,4 +10,5 @@ public sealed record LiveLevelDto(
     bool IsEventActive,
     DateTimeOffset? EventActiveSince,
     DateTimeOffset? ActiveSessionStartedAt,
-    int? ActiveSessionEventCount);
+    int? ActiveSessionEventCount,
+    bool IsCalibrating = false);

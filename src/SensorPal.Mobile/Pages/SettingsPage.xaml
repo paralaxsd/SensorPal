@@ -99,8 +99,8 @@
             <!-- Actions -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                 <Button Text="Cancel"
-                        BackgroundColor="Transparent"
-                        TextColor="Gray"
+                        BackgroundColor="#555555"
+                        TextColor="White"
                         Clicked="OnCancelClicked" />
                 <Button Grid.Column="1"
                         x:Name="SaveButton"

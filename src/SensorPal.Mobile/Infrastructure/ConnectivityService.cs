@@ -5,8 +5,7 @@ using SensorPal.Mobile.Extensions;
 namespace SensorPal.Mobile.Infrastructure;
 
 public sealed class ConnectivityService(
-    IOptions<ServerConfig> config,
-    ILogger<ConnectivityService> logger) : IDisposable
+    IOptions<ServerConfig> config, ILogger<ConnectivityService> logger) : IDisposable
 {
     /******************************************************************************************
      * FIELDS
@@ -74,6 +73,7 @@ public sealed class ConnectivityService(
     public void Dispose()
     {
         if (_disposed) { return; }
+
         _disposed = true;
         _cts?.Cancel();
         _cts?.Dispose();

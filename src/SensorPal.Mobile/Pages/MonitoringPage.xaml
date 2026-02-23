@@ -36,6 +36,15 @@
                     HeightRequest="64"
                     Clicked="OnToggleClicked" />
 
+            <!-- Calibration button (hidden while monitoring is active) -->
+            <Button x:Name="CalibrateButton"
+                    Text="Calibrate"
+                    FontSize="15"
+                    HeightRequest="44"
+                    BackgroundColor="#555555"
+                    TextColor="White"
+                    Clicked="OnCalibrateClicked" />
+
             <!-- Input level meter (always visible while page is shown) -->
             <VerticalStackLayout Spacing="6">
                 <Label Text="Input Level" TextColor="Gray" FontSize="13" />

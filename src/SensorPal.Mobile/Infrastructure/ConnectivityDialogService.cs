@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Application = Microsoft.Maui.Controls.Application;
 
 #if ANDROID
 using Android.App;
@@ -12,8 +13,7 @@ namespace SensorPal.Mobile.Infrastructure;
 /// focused on navigation.
 /// </summary>
 public sealed class ConnectivityDialogService(
-    ConnectivityService connectivity,
-    ILogger<ConnectivityDialogService> logger)
+    ConnectivityService connectivity, ILogger<ConnectivityDialogService> logger)
 {
     enum DialogAction { Retry, Quit, Settings }
 
@@ -60,7 +60,7 @@ public sealed class ConnectivityDialogService(
 
         // Don't show the dialog while any modal page is on top (e.g. Settings).
         // The user is actively configuring the app and needs to finish first.
-        var windows = Microsoft.Maui.Controls.Application.Current?.Windows;
+        var windows = Application.Current?.Windows;
         var modalStack = windows is { Count: > 0 } ? windows[0].Page?.Navigation?.ModalStack : null;
         if (modalStack is { Count: > 0 }) return;
 
@@ -172,7 +172,7 @@ public sealed class ConnectivityDialogService(
     // thread so Shell's own navigation continuation can run and set CurrentPage.
     async Task<Page?> WaitForCurrentPageAsync()
     {
-        var page = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Page;
+        var page = Application.Current?.Windows.FirstOrDefault()?.Page;
         if (page is not Shell shell) return page;
 
         const int maxAttempts = 20;

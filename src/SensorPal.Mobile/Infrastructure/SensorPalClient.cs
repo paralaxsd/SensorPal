@@ -123,6 +123,18 @@ public sealed class SensorPalClient
         _logger.LogInformation("Monitoring stopped");
     }
 
+    public async Task StartCalibrationAsync()
+    {
+        await ExecuteAsync(() => _http.PostAsync($"{BaseUrl}/monitoring/calibrate/start", null));
+        _logger.LogInformation("Calibration started");
+    }
+
+    public async Task StopCalibrationAsync()
+    {
+        await ExecuteAsync(() => _http.PostAsync($"{BaseUrl}/monitoring/calibrate/stop", null));
+        _logger.LogInformation("Calibration stopped");
+    }
+
     public async Task<SettingsDto?> GetSettingsAsync()
     {
         return await ExecuteAsync(
