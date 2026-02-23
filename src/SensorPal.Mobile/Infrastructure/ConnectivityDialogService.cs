@@ -15,8 +15,13 @@ public sealed class ConnectivityDialogService(
     ConnectivityService connectivity,
     ILogger<ConnectivityDialogService> logger)
 {
+    enum DialogAction { Retry, Quit, Settings }
+
     bool _dialogVisible;
     bool _started;
+
+    /// <summary>Called when the user taps "Settings" in the offline dialog.</summary>
+    public Func<Task>? OpenSettingsAsync { get; set; }
 
 #if ANDROID
     // Strong managed reference prevents GC of the dialog's Java callback peers in AOT builds.
@@ -52,12 +57,18 @@ public sealed class ConnectivityDialogService(
     {
         logger.LogDebug("Connectivity changed to {Reachable}", isReachable);
         if (isReachable || _dialogVisible) return;
+
+        // Don't show the dialog while any modal page is on top (e.g. Settings).
+        // The user is actively configuring the app and needs to finish first.
+        var windows = Microsoft.Maui.Controls.Application.Current?.Windows;
+        var modalStack = windows is { Count: > 0 } ? windows[0].Page?.Navigation?.ModalStack : null;
+        if (modalStack is { Count: > 0 }) return;
+
         MainThread.BeginInvokeOnMainThread(() => _ = ShowOfflineDialogAsync());
     }
 
     async Task ShowOfflineDialogAsync()
     {
-        //return; // Disable the dialog for now while we investigate some reports of it not dismissing properly.
         if (_dialogVisible)
         {
             logger.LogWarning("Already showing connectivity dialog, skipping");
@@ -69,13 +80,13 @@ public sealed class ConnectivityDialogService(
 
         try
         {
-            do
+            while (true)
             {
-                bool retry;
+                DialogAction action;
                 try
                 {
-                    retry = await ShowConnectivityAlertAsync();
-                    logger.LogDebug("Alert result: retry={Retry}", retry);
+                    action = await ShowConnectivityAlertAsync();
+                    logger.LogDebug("Alert result: {Action}", action);
                 }
                 catch (Exception ex)
                 {
@@ -83,15 +94,18 @@ public sealed class ConnectivityDialogService(
                     return;
                 }
 
-                if (!retry)
+                if (action == DialogAction.Quit)
                 {
                     Environment.Exit(0);
                     return;
                 }
 
+                if (action == DialogAction.Settings && OpenSettingsAsync is { } openSettings)
+                    await openSettings();
+
                 await connectivity.CheckNowAsync();
+                if (connectivity.IsServerReachable) break;
             }
-            while (!connectivity.IsServerReachable);
         }
         finally
         {
@@ -102,16 +116,16 @@ public sealed class ConnectivityDialogService(
     // MAUI's DisplayAlertAsync has a known issue in .NET 10 AOT/Release builds where the
     // backing TaskCompletionSource is never resolved. On Android we bypass the MAUI layer
     // and use AlertDialog directly via Platform.CurrentActivity.
-    async Task<bool> ShowConnectivityAlertAsync()
+    async Task<DialogAction> ShowConnectivityAlertAsync()
     {
 #if ANDROID
-        var tcs = new TaskCompletionSource<bool>();
+        var tcs = new TaskCompletionSource<DialogAction>();
 
         var activity = (Activity?)Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
         if (activity is null)
         {
             logger.LogError("No current Android Activity — cannot show alert");
-            return false;
+            return DialogAction.Retry;
         }
 
         activity.RunOnUiThread(() =>
@@ -121,16 +135,18 @@ public sealed class ConnectivityDialogService(
                 .SetMessage(
                     "The SensorPal server could not be reached.\n\n" +
                     "Make sure the server is running and your device is on the same network.")!
-                .SetPositiveButton("Retry", (_, _) => tcs.TrySetResult(true))!
-                .SetNegativeButton("Quit App", (_, _) => tcs.TrySetResult(false))!
+                .SetPositiveButton("Retry", (_, _) => tcs.TrySetResult(DialogAction.Retry))!
+                .SetNeutralButton("Settings", (_, _) => tcs.TrySetResult(DialogAction.Settings))!
+                .SetNegativeButton("Quit App", (_, _) => tcs.TrySetResult(DialogAction.Quit))!
                 .SetCancelable(false)!
                 .Create()!;
 
             _activeDialog.Show();
             // Override button text color — default MAUI theme renders it in an unreadable purple.
             var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210); // Material Blue 700
-            _activeDialog.GetButton(-1)?.SetTextColor(buttonColor); // BUTTON_POSITIVE
-            _activeDialog.GetButton(-2)?.SetTextColor(buttonColor); // BUTTON_NEGATIVE
+            _activeDialog.GetButton(-1)?.SetTextColor(buttonColor);  // BUTTON_POSITIVE
+            _activeDialog.GetButton(-3)?.SetTextColor(buttonColor);  // BUTTON_NEUTRAL
+            _activeDialog.GetButton(-2)?.SetTextColor(buttonColor);  // BUTTON_NEGATIVE
         });
 
         var result = await tcs.Task;
@@ -141,12 +157,14 @@ public sealed class ConnectivityDialogService(
         var page = await WaitForCurrentPageAsync();
         logger.LogDebug("Alert target: {PageType}", page?.GetType().Name ?? "null");
 
-        return page is not null && await page.DisplayAlertAsync(
+        if (page is null) return DialogAction.Retry;
+        var retry = await page.DisplayAlertAsync(
             "Server Unreachable",
             "The SensorPal server could not be reached.\n\n" +
             "Make sure the server is running and your device is on the same network.",
             "Retry",
             "Quit App");
+        return retry ? DialogAction.Retry : DialogAction.Quit;
 #endif
     }
 

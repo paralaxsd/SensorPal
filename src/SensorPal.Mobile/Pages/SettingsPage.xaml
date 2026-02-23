@@ -77,6 +77,16 @@
             <Label Text="Security" FontAttributes="Bold" FontSize="18" />
 
             <VerticalStackLayout Spacing="8">
+                <Label Text="Server URL" VerticalOptions="Center" />
+                <Entry x:Name="ServerUrlEntry"
+                       Keyboard="Url"
+                       FontFamily="Courier New"
+                       FontSize="12" />
+                <Label Text="Leave blank to use the default URL from app settings."
+                       TextColor="Gray" FontSize="12" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="8">
                 <Label Text="API Key" VerticalOptions="Center" />
                 <Entry x:Name="ApiKeyEntry"
                        Placeholder="Paste key from server console"

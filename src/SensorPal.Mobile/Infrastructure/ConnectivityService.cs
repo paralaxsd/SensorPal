@@ -10,7 +10,7 @@ public sealed class ConnectivityService(
     /******************************************************************************************
      * FIELDS
      * ***************************************************************************************/
-    readonly string _statusUrl = $"{config.Value.BaseUrl}/status";
+    string _statusUrl = $"{config.Value.BaseUrl}/status";
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(3) };
     CancellationTokenSource? _cts;
     bool _disposed;
@@ -53,6 +53,8 @@ public sealed class ConnectivityService(
     }
 
     public void ReportResult(bool reachable) => UpdateState(reachable);
+
+    public void UpdateStatusUrl(string baseUrl) => _statusUrl = $"{baseUrl}/status";
 
     public void Dispose()
     {

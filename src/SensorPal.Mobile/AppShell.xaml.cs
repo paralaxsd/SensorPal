@@ -19,6 +19,8 @@ public partial class AppShell
         base.OnAppearing();
         if (_started) return;
         _started = true;
+        _dialog.OpenSettingsAsync = () =>
+            Navigation.PushModalAsync(Handler!.MauiContext!.Services.GetRequiredService<SettingsPage>());
         _dialog.Start();
     }
 

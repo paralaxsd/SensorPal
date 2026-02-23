@@ -9,9 +9,10 @@ namespace SensorPal.Mobile.Infrastructure;
 public sealed class SensorPalClient
 {
     readonly HttpClient _http;
-    readonly string _base;
+    readonly string _configuredBaseUrl;
     readonly ConnectivityService _connectivity;
     readonly ILogger<SensorPalClient> _logger;
+    string _base;
 
     public SensorPalClient(
         IOptions<ServerConfig> config,
@@ -20,15 +21,29 @@ public sealed class SensorPalClient
     {
         _connectivity = connectivity;
         _logger = logger;
-        _base = config.Value.BaseUrl;
+        _configuredBaseUrl = config.Value.BaseUrl;
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+
+        var savedUrl = Preferences.Get("ServerUrl", "");
+        _base = string.IsNullOrWhiteSpace(savedUrl) ? _configuredBaseUrl : savedUrl;
 
         var key = Preferences.Get("ApiKey", "");
         if (!string.IsNullOrEmpty(key))
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
     }
 
+    /// <summary>The default URL from appsettings — shown as placeholder in Settings.</summary>
+    public string ConfiguredBaseUrl => _configuredBaseUrl;
+
     public bool IsAuthError { get; private set; }
+
+    public void SetBaseUrl(string? url)
+    {
+        var trimmed = url?.Trim() ?? "";
+        Preferences.Set("ServerUrl", trimmed);
+        _base = string.IsNullOrWhiteSpace(trimmed) ? _configuredBaseUrl : trimmed;
+        _connectivity.UpdateStatusUrl(_base);
+    }
 
     public void SetApiKey(string? key)
     {

@@ -10,6 +10,7 @@ public partial class SettingsPage : ContentPage
     static readonly int[] BitrateOptions = [32, 64, 96, 128];
 
     readonly SensorPalClient _client;
+    readonly ConnectivityService _connectivity;
     readonly NotificationService _notificationService;
     readonly ILogger<SettingsPage> _logger;
 
@@ -19,10 +20,12 @@ public partial class SettingsPage : ContentPage
 
     public SettingsPage(
         SensorPalClient client,
+        ConnectivityService connectivity,
         NotificationService notificationService,
         ILogger<SettingsPage> logger)
     {
         _client = client;
+        _connectivity = connectivity;
         _notificationService = notificationService;
         _logger = logger;
         InitializeComponent();
@@ -38,6 +41,15 @@ public partial class SettingsPage : ContentPage
 
     async Task LoadSettingsAsync()
     {
+        // Always load local-only settings — no server call needed.
+        ServerUrlEntry.Placeholder = _client.ConfiguredBaseUrl;
+        ServerUrlEntry.Text = Preferences.Get("ServerUrl", "");
+        NotificationsSwitch.IsToggled = _notificationService.IsEnabled;
+        ApiKeyEntry.Text = Preferences.Get("ApiKey", "");
+
+        // Server settings — skip if server is unreachable to avoid triggering the offline dialog.
+        if (!_connectivity.IsServerReachable) return;
+
         try
         {
             var dto = await _client.GetSettingsAsync();
@@ -51,10 +63,6 @@ public partial class SettingsPage : ContentPage
                 SetPostRoll(dto.PostRollSeconds);
                 BitratePicker.SelectedIndex = Array.IndexOf(BitrateOptions, dto.BackgroundBitrate)
                     is var idx && idx >= 0 ? idx : 1;
-
-                // Notifications and API key are client-side only (Preferences), never synced to server.
-                NotificationsSwitch.IsToggled = _notificationService.IsEnabled;
-                ApiKeyEntry.Text = Preferences.Get("ApiKey", "");
             }
             finally
             {
@@ -63,7 +71,7 @@ public partial class SettingsPage : ContentPage
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load settings");
+            _logger.LogError(ex, "Failed to load server settings");
         }
     }
 
@@ -139,22 +147,31 @@ public partial class SettingsPage : ContentPage
         SaveButton.IsEnabled = false;
         try
         {
-            var bitrate = BitratePicker.SelectedIndex >= 0
-                ? BitrateOptions[BitratePicker.SelectedIndex]
-                : 64;
-
-            var dto = new SettingsDto(
-                NoiseThresholdDb: ThresholdSlider.Value,
-                PreRollSeconds: _preRoll,
-                PostRollSeconds: _postRoll,
-                BackgroundBitrate: bitrate);
-
-            await _client.SaveSettingsAsync(dto);
-
+            // Always persist local settings first — these work without server connectivity.
+            _client.SetBaseUrl(ServerUrlEntry.Text);
             _client.SetApiKey(ApiKeyEntry.Text.Trim());
 
-            SaveButton.Text = "Saved ✓";
+            // Try to sync server settings — best effort, don't block dismiss on failure.
+            try
+            {
+                var bitrate = BitratePicker.SelectedIndex >= 0
+                    ? BitrateOptions[BitratePicker.SelectedIndex]
+                    : 64;
 
+                var dto = new SettingsDto(
+                    NoiseThresholdDb: ThresholdSlider.Value,
+                    PreRollSeconds: _preRoll,
+                    PostRollSeconds: _postRoll,
+                    BackgroundBitrate: bitrate);
+
+                await _client.SaveSettingsAsync(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to save server settings (local settings were saved)");
+            }
+
+            SaveButton.Text = "Saved ✓";
             await Task.Delay(800);
             await Navigation.PopModalAsync();
         }
