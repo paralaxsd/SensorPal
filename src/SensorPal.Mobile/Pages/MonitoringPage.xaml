@@ -7,7 +7,6 @@
              Title="Monitoring">
 
     <ContentPage.Resources>
-        <conv:BoolToStringConverter x:Key="BoolToActiveLabel" TrueValue="● Active" FalseValue="Done" />
         <conv:LocalDateTimeConverter x:Key="LocalDateTime" Format="dd.MM.yyyy HH:mm" />
     </ContentPage.Resources>
 
@@ -99,7 +98,7 @@
                                        TextColor="Gray" FontSize="13" />
                             </VerticalStackLayout>
                             <Label Grid.Column="1"
-                                   Text="{Binding IsActive, Converter={StaticResource BoolToActiveLabel}}"
+                                   Text="{Binding StatusText}"
                                    VerticalOptions="Center" />
                             <Button Grid.Column="2"
                                     Text="▶"
