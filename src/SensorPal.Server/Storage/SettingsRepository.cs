@@ -3,19 +3,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SensorPal.Server.Configuration;
 using SensorPal.Server.Entities;
+using SensorPal.Shared.Extensions;
 
 namespace SensorPal.Server.Storage;
 
 sealed class SettingsRepository(
-    IDbContextFactory<SensorPalDbContext> factory,
-    IOptions<AudioConfig> defaults,
+    IDbContextFactory<SensorPalDbContext> factory, IOptions<AudioConfig> defaults,
     ILogger<SettingsRepository> logger)
 {
+    /******************************************************************************************
+     * FIELDS
+     * ***************************************************************************************/
     AppSettings? _cache;
 
+    /******************************************************************************************
+     * METHODS
+     * ***************************************************************************************/
     public async Task<AppSettings> GetAsync()
     {
-        if (_cache is not null) return _cache;
+        if (_cache is { }) return _cache;
 
         await using var db = await factory.CreateDbContextAsync();
         var settings = await db.AppSettings.FindAsync(1)
@@ -27,7 +33,7 @@ sealed class SettingsRepository(
                 BackgroundBitrate = defaults.Value.BackgroundBitrate,
             };
 
-        if (string.IsNullOrEmpty(settings.ApiKey))
+        if (settings.ApiKey.NullOrEmpty)
             await GenerateAndSaveApiKeyAsync(db, settings);
 
         _cache = settings;
@@ -68,8 +74,7 @@ sealed class SettingsRepository(
         settings.ApiKey = GenerateKey();
 
         var existing = await FindOrPrepareInsertAsync(db, settings);
-        if (existing is { })
-            existing.ApiKey = settings.ApiKey;
+        existing?.ApiKey = settings.ApiKey;
 
         await db.SaveChangesAsync();
         logger.LogWarning("API Key generated — copy this into the mobile app Settings: {ApiKey}", settings.ApiKey);
@@ -80,7 +85,7 @@ sealed class SettingsRepository(
     /// If it does not exist, prepares <paramref name="settings"/> for insertion by setting
     /// its Id and registering it with the context, then returns <see langword="null"/>.
     /// If it does exist, returns the tracked entity; the caller is responsible for mutating it.
-    /// The caller must still call <see cref="DbContext.SaveChangesAsync"/> in both cases.
+    /// The caller must still call <see cref="DbContext.SaveChangesAsync(CancellationToken)"/> in both cases.
     /// </summary>
     static async Task<AppSettings?> FindOrPrepareInsertAsync(SensorPalDbContext db, AppSettings settings)
     {

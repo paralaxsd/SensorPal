@@ -152,19 +152,57 @@ public sealed class ConnectivityDialogService(
         var result = await tcs.Task;
         _activeDialog = null;
         return result;
+#elif WINDOWS
+        // WinUI ContentDialog renders all three buttons side-by-side in the footer,
+        // matching the Android AlertDialog layout.
+        const string message =
+            "The SensorPal server could not be reached.\n\n" +
+            "Make sure the server is running and your device is on the same network.";
+
+        var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+        {
+            Title = "Server Unreachable",
+            Content = message,
+            PrimaryButtonText = "Retry",
+            SecondaryButtonText = "Settings",
+            CloseButtonText = "Quit App",
+            DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.Primary
+        };
+
+        if (Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView
+            is Microsoft.UI.Xaml.Window winUIWindow)
+        {
+            dialog.XamlRoot = winUIWindow.Content.XamlRoot;
+            var result = await dialog.ShowAsync();
+            return result switch
+            {
+                Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary => DialogAction.Retry,
+                Microsoft.UI.Xaml.Controls.ContentDialogResult.Secondary => DialogAction.Settings,
+                _ => DialogAction.Quit
+            };
+        }
+
+        return DialogAction.Retry;
 #else
-        // Shell.OnAppearing fires before CurrentPage is set — wait for initial navigation.
+        // iOS / macCatalyst fallback: DisplayActionSheetAsync supports 3+ options.
         var page = await WaitForCurrentPageAsync();
         logger.LogDebug("Alert target: {PageType}", page?.GetType().Name ?? "null");
 
         if (page is null) return DialogAction.Retry;
-        var retry = await page.DisplayAlertAsync(
-            "Server Unreachable",
-            "The SensorPal server could not be reached.\n\n" +
-            "Make sure the server is running and your device is on the same network.",
+
+        var action = await page.DisplayActionSheetAsync(
+            "Server Unreachable — Make sure the server is running and on the same network.",
+            "Quit App",
+            null,
             "Retry",
-            "Quit App");
-        return retry ? DialogAction.Retry : DialogAction.Quit;
+            "Settings");
+
+        return action switch
+        {
+            "Settings" => DialogAction.Settings,
+            "Quit App" => DialogAction.Quit,
+            _ => DialogAction.Retry
+        };
 #endif
     }
 

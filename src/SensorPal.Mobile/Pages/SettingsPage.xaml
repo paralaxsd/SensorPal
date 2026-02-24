@@ -7,58 +7,63 @@
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="24">
 
-            <!-- Detection -->
-            <Label Text="Detection" FontAttributes="Bold" FontSize="18" />
+            <!-- Server settings (Detection + Recording) — disabled when offline -->
+            <VerticalStackLayout x:Name="ServerSettingsGroup" Spacing="24" IsEnabled="False">
 
-            <VerticalStackLayout Spacing="8">
-                <HorizontalStackLayout Spacing="8">
-                    <Label Text="Noise Threshold" VerticalOptions="Center" />
-                    <Label x:Name="ThresholdLabel"
-                           TextColor="OrangeRed"
-                           VerticalOptions="Center" />
-                </HorizontalStackLayout>
-                <Slider x:Name="ThresholdSlider"
-                        Minimum="-60" Maximum="0"
-                        ValueChanged="OnThresholdChanged" />
-                <Label Text="Lower value = more sensitive (picks up quieter sounds)"
-                       TextColor="Gray" FontSize="12" />
+                <!-- Detection -->
+                <Label Text="Detection" FontAttributes="Bold" FontSize="18" />
+
+                <VerticalStackLayout Spacing="8">
+                    <HorizontalStackLayout Spacing="8">
+                        <Label Text="Noise Threshold" VerticalOptions="Center" />
+                        <Label x:Name="ThresholdLabel"
+                               TextColor="OrangeRed"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <Slider x:Name="ThresholdSlider"
+                            Minimum="-60" Maximum="0"
+                            ValueChanged="OnThresholdChanged" />
+                    <Label Text="Lower value = more sensitive (picks up quieter sounds)"
+                           TextColor="Gray" FontSize="12" />
+                </VerticalStackLayout>
+
+                <!-- Recording -->
+                <Label Text="Recording" FontAttributes="Bold" FontSize="18" />
+
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
+                      RowSpacing="20">
+
+                    <Label Grid.Row="0" Text="Pre-Roll (s)" VerticalOptions="Center" />
+                    <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="4">
+                        <Button Text="−" WidthRequest="44" HeightRequest="44"
+                                Clicked="OnPreRollMinus" />
+                        <Label x:Name="PreRollLabel" WidthRequest="32"
+                               HorizontalTextAlignment="Center" VerticalOptions="Center"
+                               FontSize="16" />
+                        <Button Text="+" WidthRequest="44" HeightRequest="44"
+                                Clicked="OnPreRollPlus" />
+                    </HorizontalStackLayout>
+
+                    <Label Grid.Row="1" Text="Post-Roll (s)" VerticalOptions="Center" />
+                    <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
+                        <Button Text="−" WidthRequest="44" HeightRequest="44"
+                                Clicked="OnPostRollMinus" />
+                        <Label x:Name="PostRollLabel" WidthRequest="32"
+                               HorizontalTextAlignment="Center" VerticalOptions="Center"
+                               FontSize="16" />
+                        <Button Text="+" WidthRequest="44" HeightRequest="44"
+                                Clicked="OnPostRollPlus" />
+                    </HorizontalStackLayout>
+
+                    <Label Grid.Row="2" Text="Background Bitrate" VerticalOptions="Center" />
+                    <Picker Grid.Row="2" Grid.Column="1"
+                            x:Name="BitratePicker"
+                            WidthRequest="120"
+                            HorizontalOptions="End" />
+
+                </Grid>
+
             </VerticalStackLayout>
-
-            <!-- Recording -->
-            <Label Text="Recording" FontAttributes="Bold" FontSize="18" />
-
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
-                  RowSpacing="20">
-
-                <Label Grid.Row="0" Text="Pre-Roll (s)" VerticalOptions="Center" />
-                <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="4">
-                    <Button Text="−" WidthRequest="44" HeightRequest="44"
-                            Clicked="OnPreRollMinus" />
-                    <Label x:Name="PreRollLabel" WidthRequest="32"
-                           HorizontalTextAlignment="Center" VerticalOptions="Center"
-                           FontSize="16" />
-                    <Button Text="+" WidthRequest="44" HeightRequest="44"
-                            Clicked="OnPreRollPlus" />
-                </HorizontalStackLayout>
-
-                <Label Grid.Row="1" Text="Post-Roll (s)" VerticalOptions="Center" />
-                <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
-                    <Button Text="−" WidthRequest="44" HeightRequest="44"
-                            Clicked="OnPostRollMinus" />
-                    <Label x:Name="PostRollLabel" WidthRequest="32"
-                           HorizontalTextAlignment="Center" VerticalOptions="Center"
-                           FontSize="16" />
-                    <Button Text="+" WidthRequest="44" HeightRequest="44"
-                            Clicked="OnPostRollPlus" />
-                </HorizontalStackLayout>
-
-                <Label Grid.Row="2" Text="Background Bitrate" VerticalOptions="Center" />
-                <Picker Grid.Row="2" Grid.Column="1"
-                        x:Name="BitratePicker"
-                        WidthRequest="120"
-                        HorizontalOptions="End" />
-
-            </Grid>
 
             <!-- Notifications -->
             <Label Text="Notifications" FontAttributes="Bold" FontSize="18" />

@@ -7,6 +7,9 @@ namespace SensorPal.Mobile.Pages;
 
 public partial class SettingsPage : ContentPage
 {
+    /******************************************************************************************
+     * FIELDS
+     * ***************************************************************************************/
     static readonly int[] BitrateOptions = [32, 64, 96, 128];
 
     readonly SensorPalClient _client;
@@ -17,7 +20,11 @@ public partial class SettingsPage : ContentPage
     int _preRoll;
     int _postRoll;
     bool _loading;
+    bool _serverSettingsLoaded;
 
+    /******************************************************************************************
+     * STRUCTORS
+     * ***************************************************************************************/
     public SettingsPage(
         SensorPalClient client,
         ConnectivityService connectivity,
@@ -33,6 +40,9 @@ public partial class SettingsPage : ContentPage
         BitratePicker.ItemsSource = BitrateOptions.Select(b => $"{b} kbps").ToList();
     }
 
+    /******************************************************************************************
+     * METHODS
+     * ***************************************************************************************/
     protected override void OnAppearing()
     {
         base.OnAppearing();
@@ -48,6 +58,9 @@ public partial class SettingsPage : ContentPage
         ApiKeyEntry.Text = Preferences.Get(PreferencesKeys.ApiKey, "");
 
         // Server settings — skip if server is unreachable to avoid triggering the offline dialog.
+        _serverSettingsLoaded = false;
+        ServerSettingsGroup.IsEnabled = false;
+
         if (!_connectivity.IsServerReachable) return;
 
         try
@@ -68,6 +81,9 @@ public partial class SettingsPage : ContentPage
             {
                 _loading = false;
             }
+
+            _serverSettingsLoaded = true;
+            ServerSettingsGroup.IsEnabled = true;
         }
         catch (Exception ex)
         {
@@ -151,24 +167,28 @@ public partial class SettingsPage : ContentPage
             _client.SetBaseUrl(ServerUrlEntry.Text);
             _client.SetApiKey(ApiKeyEntry.Text.Trim());
 
-            // Try to sync server settings — best effort, don't block dismiss on failure.
-            try
+            // Only sync server settings if they were actually loaded from the server —
+            // prevents overwriting with zero defaults when the page was opened offline.
+            if (_serverSettingsLoaded)
             {
-                var bitrate = BitratePicker.SelectedIndex >= 0
-                    ? BitrateOptions[BitratePicker.SelectedIndex]
-                    : 64;
+                try
+                {
+                    var bitrate = BitratePicker.SelectedIndex >= 0
+                        ? BitrateOptions[BitratePicker.SelectedIndex]
+                        : 64;
 
-                var dto = new SettingsDto(
-                    NoiseThresholdDb: ThresholdSlider.Value,
-                    PreRollSeconds: _preRoll,
-                    PostRollSeconds: _postRoll,
-                    BackgroundBitrate: bitrate);
+                    var dto = new SettingsDto(
+                        NoiseThresholdDb: ThresholdSlider.Value,
+                        PreRollSeconds: _preRoll,
+                        PostRollSeconds: _postRoll,
+                        BackgroundBitrate: bitrate);
 
-                await _client.SaveSettingsAsync(dto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to save server settings (local settings were saved)");
+                    await _client.SaveSettingsAsync(dto);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to save server settings (local settings were saved)");
+                }
             }
 
             SaveButton.Text = "Saved ✓";

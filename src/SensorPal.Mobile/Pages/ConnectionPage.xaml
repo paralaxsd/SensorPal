@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SensorPal.Mobile.Pages.ConnectionPage"
+             Title="Connection">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="24">
+
+            <Label Text="Server" FontAttributes="Bold" FontSize="18" />
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Server URL" />
+                <Entry x:Name="ServerUrlEntry"
+                       Keyboard="Url"
+                       FontFamily="Courier New"
+                       FontSize="12" />
+                <Label Text="Leave blank to use the default URL from app settings."
+                       TextColor="Gray" FontSize="12" />
+            </VerticalStackLayout>
+
+            <Label Text="Security" FontAttributes="Bold" FontSize="18" />
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="API Key" />
+                <Entry x:Name="ApiKeyEntry"
+                       Placeholder="Paste key from server console"
+                       FontFamily="Courier New"
+                       FontSize="12" />
+                <Label Text="Enter the API key shown in the server log on first launch."
+                       TextColor="Gray" FontSize="12" />
+            </VerticalStackLayout>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Text="Cancel"
+                        BackgroundColor="#555555"
+                        TextColor="White"
+                        Clicked="OnCancelClicked" />
+                <Button Grid.Column="1"
+                        x:Name="SaveButton"
+                        Text="Save"
+                        Clicked="OnSaveClicked" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

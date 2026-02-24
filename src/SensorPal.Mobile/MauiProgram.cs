@@ -126,5 +126,6 @@ public static class MauiProgram
         builder.Services.AddTransient<SessionPlayerPage>();
         builder.Services.AddTransient<LogsPage>();
         builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<ConnectionPage>();
     }
 }

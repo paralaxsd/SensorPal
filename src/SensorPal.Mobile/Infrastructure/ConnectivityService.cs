@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SensorPal.Mobile.Extensions;
+using SensorPal.Shared.Extensions;
 
 namespace SensorPal.Mobile.Infrastructure;
 
@@ -24,8 +24,6 @@ public sealed class ConnectivityService(
      * ***************************************************************************************/
     public bool IsServerReachable { get; private set; } = true;
 
-    public event Action<bool>? ConnectivityChanged;
-
     string BaseUrl
     {
         get
@@ -35,6 +33,11 @@ public sealed class ConnectivityService(
         }
     }
     string StatusUrl => $"{BaseUrl}/status";
+
+    /******************************************************************************************
+     * EVENTS
+     * ***************************************************************************************/
+    public event Action<bool>? ConnectivityChanged;
 
     /******************************************************************************************
      * METHODS
