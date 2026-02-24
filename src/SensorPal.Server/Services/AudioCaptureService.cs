@@ -11,34 +11,22 @@ namespace SensorPal.Server.Services;
 sealed class AudioCaptureService(
     IOptions<AudioConfig> options, MonitoringStateService stateService, SessionRepository sessions,
     EventRepository events, SettingsRepository settings, AudioStorage storage,
-    ILogger<AudioCaptureService> logger) : IHostedService, IDisposable
+    ILogger<AudioCaptureService> logger, ILogger<ClipRecorder> clipLogger) : IHostedService, IDisposable
 {
     /******************************************************************************************
      * FIELDS
      * ***************************************************************************************/
     readonly AudioConfig _config = options.Value;
 
-    int _postRollMs;
-
     WasapiCapture? _capture;
     LameMP3FileWriter? _backgroundWriter;
-    WaveFileWriter? _clipWriter;
-    CircularAudioBuffer? _preRoll;
+    ClipRecorder? _clipRecorder;
     NoiseDetector? _detector;
     WaveFormat? _captureFormat;
 
     long _currentSessionId;
     DateTime _backgroundStart;
     int _sessionEventCount;
-
-    // Clip state
-    bool _recordingClip;
-    bool _inPostRoll;
-    int _postRollRemainingMs;
-
-    // Pending event data — held until post-roll expires and clip is finalized
-    record struct PendingEvent(DateTime StartedAt, double PeakDb, int DurationMs);
-    PendingEvent? _pendingEvent;
 
     bool _calibrating;
 
@@ -68,9 +56,9 @@ sealed class AudioCaptureService(
     public Task StopAsync(CancellationToken cancellationToken)
     {
         stateService.StateChanged -= OnStateChanged;
-        if (_calibrating) 
-            StopCalibrate(); 
-        else 
+        if (_calibrating)
+            StopCalibrate();
+        else
             StopCapture();
         return Task.CompletedTask;
     }
@@ -78,7 +66,7 @@ sealed class AudioCaptureService(
     public void Dispose()
     {
         _backgroundWriter?.Dispose();
-        _clipWriter?.Dispose();
+        _clipRecorder?.Dispose();
         _capture?.Dispose();
     }
 
@@ -106,13 +94,8 @@ sealed class AudioCaptureService(
     async Task StartCaptureAsync()
     {
         var (s, deviceName) = await InitCaptureAsync();
-        _postRollMs = s.PostRollSeconds * 1000;
-
         var preRollBytes = _captureFormat!.AverageBytesPerSecond * s.PreRollSeconds;
-        _preRoll = new CircularAudioBuffer(preRollBytes);
-
-        _detector!.EventStarted += OnEventStarted;
-        _detector.EventEnded += OnEventEnded;
+        var postRollMs = s.PostRollSeconds * 1000;
 
         _sessionEventCount = 0;
         _backgroundStart = DateTime.UtcNow;
@@ -120,6 +103,15 @@ sealed class AudioCaptureService(
         _backgroundWriter = new LameMP3FileWriter(backgroundFile, _captureFormat, s.BackgroundBitrate);
 
         _currentSessionId = await sessions.StartSessionAsync(backgroundFile);
+
+        _clipRecorder = new ClipRecorder(
+            _currentSessionId, _backgroundStart,
+            _captureFormat, preRollBytes, postRollMs,
+            events, sessions, storage, clipLogger);
+        _clipRecorder.ClipPersisted += () => _sessionEventCount++;
+
+        _detector!.EventStarted += _clipRecorder.OnEventStarted;
+        _detector.EventEnded += _clipRecorder.OnEventEnded;
 
         _capture!.DataAvailable += OnDataAvailable;
         _capture.StartRecording();
@@ -137,13 +129,15 @@ sealed class AudioCaptureService(
 
         _capture.DataAvailable -= OnDataAvailable;
 
-        if (_detector is not null)
+        if (_detector is { })
         {
-            _detector.EventStarted -= OnEventStarted;
-            _detector.EventEnded -= OnEventEnded;
+            _detector.EventStarted -= _clipRecorder!.OnEventStarted;
+            _detector.EventEnded -= _clipRecorder!.OnEventEnded;
         }
 
-        FinishClipIfActive();
+        _clipRecorder?.FinishClipIfActive();
+        _clipRecorder?.Dispose();
+        _clipRecorder = null;
 
         _backgroundWriter?.Flush();
         _backgroundWriter?.Dispose();
@@ -198,87 +192,8 @@ sealed class AudioCaptureService(
 
         if (_calibrating) return;
 
-        _preRoll!.Add(e.Buffer, 0, e.BytesRecorded);
         _backgroundWriter!.Write(e.Buffer, 0, e.BytesRecorded);
-
-        if (!_recordingClip) return;
-
-        _clipWriter!.Write(e.Buffer, 0, e.BytesRecorded);
-
-        if (!_inPostRoll) return;
-
-        var msRecorded = (int)(e.BytesRecorded * 1000.0 / _captureFormat!.AverageBytesPerSecond);
-        _postRollRemainingMs -= msRecorded;
-
-        if (_postRollRemainingMs <= 0)
-            FinishClipIfActive();
-    }
-
-    void OnEventStarted(DateTime startedAt, double peakDb)
-    {
-        if (_recordingClip) return;
-
-        _inPostRoll = false;
-        _recordingClip = true;
-
-        var placeholderPath = storage.GetClipFilePath(0, startedAt);
-        _clipWriter = new WaveFileWriter(placeholderPath, _captureFormat!);
-
-        var preRollData = _preRoll!.GetSnapshot();
-        _clipWriter.Write(preRollData, 0, preRollData.Length);
-
-        logger.LogInformation("Noise event started at {Time}, peak {Db:F1} dBFS", startedAt, peakDb);
-    }
-
-    void OnEventEnded(DateTime startedAt, double peakDb, int durationMs)
-    {
-        // Hold event data until post-roll expires and clip is finalized
-        _pendingEvent = new PendingEvent(startedAt, peakDb, durationMs);
-        _inPostRoll = true;
-        _postRollRemainingMs = _postRollMs;
-
-        logger.LogInformation("Noise event ended, duration {Duration}ms, peak {Db:F1} dBFS", durationMs, peakDb);
-    }
-
-    void FinishClipIfActive()
-    {
-        if (!_recordingClip) return;
-
-        _inPostRoll = false;
-        _recordingClip = false;
-
-        // Compute clip duration from bytes written before disposing the writer
-        var clipDurationMs = 0;
-        if (_clipWriter is { } && _captureFormat is { })
-        {
-            var audioBytes = Math.Max(0L, _clipWriter.Length - 44); // subtract WAV header
-            clipDurationMs = (int)(audioBytes * 1000L / _captureFormat.AverageBytesPerSecond);
-        }
-
-        _clipWriter?.Dispose();
-        _clipWriter = null;
-
-        if (_pendingEvent is { } evt)
-        {
-            _pendingEvent = null;
-            _ = PersistEventAsync(evt.StartedAt, evt.PeakDb, evt.DurationMs, clipDurationMs);
-        }
-    }
-
-    async Task PersistEventAsync(DateTime startedAt, double peakDb, int durationMs, int clipDurationMs)
-    {
-        var offsetMs = (long)(startedAt - _backgroundStart).TotalMilliseconds;
-        var placeholderPath = storage.GetClipFilePath(0, startedAt);
-
-        var id = await events.SaveEventAsync(_currentSessionId, startedAt, peakDb, durationMs, clipDurationMs, offsetMs, null);
-
-        var finalPath = storage.GetClipFilePath(id, startedAt);
-        if (File.Exists(placeholderPath))
-            File.Move(placeholderPath, finalPath, overwrite: true);
-
-        await events.UpdateClipFileAsync(id, finalPath);
-        await sessions.IncrementEventCountAsync(_currentSessionId);
-        _sessionEventCount++;
+        _clipRecorder!.ProcessData(e.Buffer, 0, e.BytesRecorded);
     }
 
     static MMDevice FindDevice(string nameSubstring)
