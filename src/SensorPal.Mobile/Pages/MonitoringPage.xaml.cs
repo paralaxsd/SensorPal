@@ -1,3 +1,4 @@
+using SensorPal.Mobile.Extensions;
 using SensorPal.Mobile.Infrastructure;
 using SensorPal.Mobile.Services;
 using SensorPal.Shared.Models;
@@ -255,9 +256,7 @@ public partial class MonitoringPage : ContentPage
     async void OnPlaySessionClicked(object? sender, EventArgs e)
     {
         if (sender is not Button btn || btn.CommandParameter is not MonitoringSessionDto session) return;
-        var player = Handler!.MauiContext!.Services.GetRequiredService<SessionPlayerPage>();
-        player.Load(session, _client.GetSessionAudioUrl(session.Id));
-        await Navigation.PushModalAsync(player);
+        await this.ShowSessionPlayerAsync(session, _client.GetSessionAudioUrl(session.Id));
     }
 
     async void OnShowAllSessionsClicked(object? sender, EventArgs e)

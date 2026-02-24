@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using SensorPal.Mobile.Extensions;
 using SensorPal.Mobile.Infrastructure;
 using SensorPal.Shared.Models;
 
@@ -54,9 +55,7 @@ public partial class SessionsPage : ContentPage
         var url = _client.GetSessionAudioUrl(session.Id);
         _logger.LogInformation("Opening player for session {SessionId} ({StartedAt}), url={Url}",
             session.Id, session.StartedAt.LocalDateTime, url);
-        var player = Handler!.MauiContext!.Services.GetRequiredService<SessionPlayerPage>();
-        player.Load(session, url);
-        await Navigation.PushModalAsync(player);
+        await this.ShowSessionPlayerAsync(session, url);
     }
 
     async void OnCloseClicked(object? sender, EventArgs e)
