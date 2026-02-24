@@ -4,24 +4,38 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="SensorPal.Mobile.Pages.SessionPlayerPage">
 
-    <Grid RowDefinitions="Auto, *, Auto">
+    <Grid RowDefinitions="Auto, Auto, *, Auto">
 
-        <!-- Header -->
-        <Label Grid.Row="0"
-               x:Name="TitleLabel"
-               FontSize="20"
-               FontAttributes="Bold"
-               Margin="16,16,16,8" />
+        <!-- Header: title + live wall-clock -->
+        <VerticalStackLayout Grid.Row="0" Margin="16,16,16,4" Spacing="2">
+            <Label x:Name="TitleLabel"
+                   FontSize="18"
+                   FontAttributes="Bold" />
+            <Label x:Name="WallClockLabel"
+                   FontSize="13"
+                   TextColor="Gray" />
+        </VerticalStackLayout>
+
+        <!-- Event marker chips (horizontal scroll, hidden when no events) -->
+        <ScrollView Grid.Row="1"
+                    x:Name="MarkersScroll"
+                    Orientation="Horizontal"
+                    Margin="8,4,8,0"
+                    IsVisible="False">
+            <HorizontalStackLayout x:Name="MarkersLayout"
+                                   Padding="8,0"
+                                   Spacing="6" />
+        </ScrollView>
 
         <!-- Player -->
-        <toolkit:MediaElement Grid.Row="1"
+        <toolkit:MediaElement Grid.Row="2"
                               x:Name="Player"
                               ShouldAutoPlay="True"
                               ShouldShowPlaybackControls="True"
                               Margin="16,8" />
 
         <!-- Footer -->
-        <Button Grid.Row="2"
+        <Button Grid.Row="3"
                 Text="Close"
                 HorizontalOptions="End"
                 Margin="16,8"

@@ -57,3 +57,10 @@ sealed record SettingsDto(
     int PreRollSeconds,
     int PostRollSeconds,
     int BackgroundBitrate);
+
+sealed class EventMarkerDto
+{
+    public double OffsetSeconds { get; init; }
+    public DateTimeOffset DetectedAt { get; init; }
+    public double PeakDb { get; init; }
+}

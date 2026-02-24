@@ -13,6 +13,8 @@ namespace SensorPal.Server;
 [JsonSerializable(typeof(AudioDeviceDto))]
 [JsonSerializable(typeof(IReadOnlyList<AudioDeviceDto>))]
 [JsonSerializable(typeof(SettingsDto))]
+[JsonSerializable(typeof(EventMarkerDto))]
+[JsonSerializable(typeof(IReadOnlyList<EventMarkerDto>))]
 partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

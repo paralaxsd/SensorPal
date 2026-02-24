@@ -104,6 +104,25 @@ static class MonitoringEndpoints
         })
         .WithSummary("Stop calibration mode")
         .WithDescription("Stops capture and returns to Idle.");
+
+        group.MapGet("/{id}/markers", async (long id, SessionRepository repo, EventRepository eventRepo) =>
+        {
+            var session = await repo.GetCurrentSessionAsync(id);
+            if (session is null) return Results.NotFound();
+
+            var events = await eventRepo.GetEventsBySessionAsync(id);
+            var markers = events.Select(e => new EventMarkerDto
+            {
+                OffsetSeconds = e.BackgroundOffsetMs / 1000.0,
+                DetectedAt = new DateTimeOffset(e.DetectedAt, TimeSpan.Zero),
+                PeakDb = e.PeakDb
+            }).ToList();
+
+            return Results.Ok(markers);
+        })
+        .WithSummary("Get event markers for a session")
+        .WithDescription("Returns the list of noise events as seek markers, each with the time offset " +
+            "into the background MP3 and the wall-clock detection time. Use OffsetSeconds to seek the player.");
     }
 
     class Log;

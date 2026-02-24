@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SensorPal.Mobile.Extensions;
+using SensorPal.Shared.Extensions;
 using SensorPal.Shared.Models;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -40,9 +40,8 @@ public sealed class SensorPalClient
      * STRUCTORS
      * ***************************************************************************************/
     public SensorPalClient(
-        IOptions<ServerConfig> config,
-        ConnectivityService connectivity,
-        ILogger<SensorPalClient> logger)
+        IOptions<ServerConfig> config, ConnectivityService connectivity, 
+            ILogger<SensorPalClient> logger)
     {
         _config = config;
         _connectivity = connectivity;
@@ -65,6 +64,17 @@ public sealed class SensorPalClient
     public void SetBaseUrl(string? url)
     {
         var trimmed = url?.Trim() ?? "";
+
+        if(Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) &&
+            uri.Host is "0.0.0.0")
+        {
+            _logger.LogWarning("The host '0.0.0.0' cannot be used as a target name. " + 
+                "Using 'localhost' as a reasonable fallback.");
+
+            var builder = new UriBuilder(uri) { Host = "localhost" };
+            trimmed = builder.Uri.ToString().TrimEnd('/');
+        }
+
         Preferences.Set(PreferencesKeys.ServerUrl, trimmed);
     }
 
@@ -103,6 +113,14 @@ public sealed class SensorPalClient
     }
 
     public string GetSessionAudioUrl(long sessionId) => $"{BaseUrl}/monitoring/{sessionId}/audio";
+
+    public async Task<IReadOnlyList<EventMarkerDto>> GetSessionMarkersAsync(long sessionId)
+    {
+        var list = await ExecuteAsync(
+            () => _http.GetFromJsonAsync<List<EventMarkerDto>>(
+                $"{BaseUrl}/monitoring/{sessionId}/markers"));
+        return list ?? [];
+    }
 
     public async Task<Stream> GetEventAudioAsync(long eventId)
     {
