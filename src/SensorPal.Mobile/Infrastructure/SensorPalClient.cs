@@ -112,7 +112,12 @@ public sealed class SensorPalClient
         catch { return null; }
     }
 
-    public string GetSessionAudioUrl(long sessionId) => $"{BaseUrl}/monitoring/{sessionId}/audio";
+    public string GetSessionAudioUrl(long sessionId)
+    {
+        var key = Preferences.Get(PreferencesKeys.ApiKey, "");
+        var tokenSuffix = key.HasContent ? $"?token={Uri.EscapeDataString(key)}" : "";
+        return $"{BaseUrl}/monitoring/{sessionId}/audio{tokenSuffix}";
+    }
 
     public async Task<IReadOnlyList<EventMarkerDto>> GetSessionMarkersAsync(long sessionId)
     {

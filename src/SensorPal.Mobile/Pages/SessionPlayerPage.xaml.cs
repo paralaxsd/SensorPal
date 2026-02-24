@@ -4,6 +4,7 @@ using SensorPal.Shared.Models;
 
 namespace SensorPal.Mobile.Pages;
 
+// ReSharper disable once RedundantExtendsListEntry
 public partial class SessionPlayerPage : ContentPage
 {
     /******************************************************************************************
@@ -33,7 +34,7 @@ public partial class SessionPlayerPage : ContentPage
         WallClockLabel.Text = session.StartedAt.LocalDateTime.ToString("HH:mm:ss");
         Player.Source = MediaSource.FromUri(audioUrl);
         _ = LoadMarkersAsync(session.Id);
-    }
+        }
 
     protected override void OnAppearing()
     {

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using SensorPal.Mobile.Pages;
 using SensorPal.Shared.Models;
 

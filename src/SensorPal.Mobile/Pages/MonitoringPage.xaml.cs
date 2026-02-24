@@ -185,10 +185,10 @@ public partial class MonitoringPage : ContentPage
 
     // Button visual appearances — defined once, reused across states.
     static readonly (string Text, Color Color)
-        BtnToggleStart  = ("Start Monitoring",  Colors.DodgerBlue),
-        BtnToggleStop   = ("Stop Monitoring",   Colors.DarkRed),
-        BtnCalibrateOff = ("Calibrate",         Color.FromArgb("#555555")),
-        BtnCalibrateOn  = ("Stop Calibrating",  Colors.DarkOrange);
+        BtnToggleStart = ("Start Monitoring", Colors.DodgerBlue),
+        BtnToggleStop = ("Stop Monitoring", Colors.DarkRed),
+        BtnCalibrateOff = ("Calibrate", Color.FromArgb("#555555")),
+        BtnCalibrateOn = ("Stop Calibrating", Colors.DarkOrange);
 
     readonly record struct PageUiState(
         string StatusText, Color StatusColor,
@@ -255,7 +255,8 @@ public partial class MonitoringPage : ContentPage
 
     async void OnPlaySessionClicked(object? sender, EventArgs e)
     {
-        if (sender is not Button btn || btn.CommandParameter is not MonitoringSessionDto session) return;
+        if (sender is not Button { CommandParameter: MonitoringSessionDto session }) { return; }
+
         await this.ShowSessionPlayerAsync(session, _client.GetSessionAudioUrl(session.Id));
     }
 

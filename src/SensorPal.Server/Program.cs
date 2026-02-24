@@ -129,8 +129,16 @@ static class Program
                 {
                     var settings = ctx.RequestServices.GetRequiredService<SettingsRepository>();
                     var s = await settings.GetAsync();
-                    if (!ctx.Request.Headers.TryGetValue("Authorization", out var header)
-                        || header.ToString() != $"Bearer {s.ApiKey}")
+
+                    var bearerOk = ctx.Request.Headers.TryGetValue("Authorization", out var header)
+                        && header.ToString() == $"Bearer {s.ApiKey}";
+
+                    // Allow ?token= query param for media streaming endpoints where setting
+                    // request headers is not possible (e.g. MediaElement URL source).
+                    var tokenOk = ctx.Request.Query.TryGetValue("token", out var queryToken)
+                        && queryToken.ToString() == s.ApiKey;
+
+                    if (!bearerOk && !tokenOk)
                     {
                         ctx.Response.StatusCode = 401;
                         return;
