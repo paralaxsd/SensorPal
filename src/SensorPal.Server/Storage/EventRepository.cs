@@ -27,8 +27,7 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
     public async Task<IReadOnlyList<NoiseEvent>> GetEventsByDateAsync(DateOnly date)
     {
         await using var db = await factory.CreateDbContextAsync();
-        var start = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local).ToUniversalTime();
-        var end = date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Local).ToUniversalTime();
+        var (start, end) = GetDayRange(date);
         return await db.NoiseEvents
             .Where(e => e.DetectedAt >= start && e.DetectedAt <= end)
             .OrderBy(e => e.DetectedAt)
@@ -52,8 +51,7 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
     public async Task<int> DeleteEventsByDateAsync(DateOnly date)
     {
         await using var db = await factory.CreateDbContextAsync();
-        var start = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local).ToUniversalTime();
-        var end = date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Local).ToUniversalTime();
+        var (start, end) = GetDayRange(date);
 
         var clipFiles = await db.NoiseEvents
             .Where(e => e.DetectedAt >= start && e.DetectedAt <= end && e.ClipFile != null)
@@ -69,4 +67,8 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
 
         return count;
     }
+
+    static (DateTime Start, DateTime End) GetDayRange(DateOnly date) => (
+        date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local).ToUniversalTime(),
+        date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Local).ToUniversalTime());
 }
