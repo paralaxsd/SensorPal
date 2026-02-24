@@ -30,7 +30,7 @@ public sealed class ConnectivityService(
     {
         get
         {
-            var saved = Preferences.Get("ServerUrl", "");
+            var saved = Preferences.Get(PreferencesKeys.ServerUrl, "");
             return saved.HasContent ? saved : _config.Value.BaseUrl;
         }
     }

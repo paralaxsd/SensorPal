@@ -43,9 +43,9 @@ public partial class SettingsPage : ContentPage
     {
         // Always load local-only settings — no server call needed.
         ServerUrlEntry.Placeholder = _client.ConfiguredBaseUrl;
-        ServerUrlEntry.Text = Preferences.Get("ServerUrl", "");
+        ServerUrlEntry.Text = Preferences.Get(PreferencesKeys.ServerUrl, "");
         NotificationsSwitch.IsToggled = _notificationService.IsEnabled;
-        ApiKeyEntry.Text = Preferences.Get("ApiKey", "");
+        ApiKeyEntry.Text = Preferences.Get(PreferencesKeys.ApiKey, "");
 
         // Server settings — skip if server is unreachable to avoid triggering the offline dialog.
         if (!_connectivity.IsServerReachable) return;

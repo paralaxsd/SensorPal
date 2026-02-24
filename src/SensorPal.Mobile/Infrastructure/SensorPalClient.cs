@@ -31,7 +31,7 @@ public sealed class SensorPalClient
     {
         get
         {
-            var saved = Preferences.Get("ServerUrl", "");
+            var saved = Preferences.Get(PreferencesKeys.ServerUrl, "");
             return saved.HasContent ? saved : _config.Value.BaseUrl;
         }
     }
@@ -54,7 +54,7 @@ public sealed class SensorPalClient
         _logger.LogInformation("SensorPalClient ready — base URL: {Url} (source: {Source})",
             baseUrl, baseUrl == _configuredBaseUrl ? "appsettings" : "saved preferences");
 
-        var key = Preferences.Get("ApiKey", "");
+        var key = Preferences.Get(PreferencesKeys.ApiKey, "");
         if (key.HasContent)
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
     }
@@ -65,13 +65,13 @@ public sealed class SensorPalClient
     public void SetBaseUrl(string? url)
     {
         var trimmed = url?.Trim() ?? "";
-        Preferences.Set("ServerUrl", trimmed);
+        Preferences.Set(PreferencesKeys.ServerUrl, trimmed);
     }
 
     public void SetApiKey(string? key)
     {
         IsAuthError = false;
-        Preferences.Set("ApiKey", key ?? "");
+        Preferences.Set(PreferencesKeys.ApiKey, key ?? "");
         _http.DefaultRequestHeaders.Authorization = key is { Length: > 0 }
             ? new AuthenticationHeaderValue("Bearer", key)
             : null;
