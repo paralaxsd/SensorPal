@@ -66,7 +66,8 @@ static class MonitoringEndpoints
         .WithDescription("Streams the continuous background MP3 recorded during the monitoring session. " +
             "Supports HTTP Range requests for seeking. Returns 404 if no background file was recorded.");
 
-        group.MapGet("/level", async (AudioCaptureService capture, SettingsRepository settingsRepo) =>
+        group.MapGet("/level", async (AudioCaptureService capture, SettingsRepository settingsRepo,
+            MonitoringStateService stateService) =>
         {
             var settings = await settingsRepo.GetAsync();
             var eventSince = capture.EventStartedAt.HasValue
@@ -79,7 +80,10 @@ static class MonitoringEndpoints
                 eventSince,
                 capture.ActiveSessionStartedAt,
                 capture.ActiveSessionEventCount,
-                capture.IsCalibrating));
+                // Use the state machine (authoritative, synchronous) rather than AudioCaptureService
+                // which sets _calibrating only after the async WASAPI init completes — causing a
+                // brief window where IsCalibrating=false even though calibration was requested.
+                stateService.IsCalibrating));
         })
         .WithSummary("Live input level and event state")
         .WithDescription("Returns the current RMS input level in dBFS, the configured threshold, " +
