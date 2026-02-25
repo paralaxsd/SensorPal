@@ -39,6 +39,8 @@ sealed class AudioCaptureService(
     public bool IsCalibrating => _calibrating;
 
     // Null during calibration — no session is active.
+    public long? ActiveSessionId =>
+        _capture is { } && !_calibrating ? _currentSessionId : null;
     public DateTimeOffset? ActiveSessionStartedAt =>
         _capture is { } && !_calibrating ? new DateTimeOffset(_backgroundStart, TimeSpan.Zero) : null;
     public int? ActiveSessionEventCount =>

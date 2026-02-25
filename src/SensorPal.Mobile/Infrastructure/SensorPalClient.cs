@@ -174,6 +174,11 @@ public sealed class SensorPalClient
         await ExecuteAsync(() => _http.DeleteAsync($"{BaseUrl}/events?date={date:yyyy-MM-dd}"));
     }
 
+    public async Task DeleteSessionAsync(long id)
+    {
+        await ExecuteAsync(() => _http.DeleteAsync($"{BaseUrl}/monitoring/{id}"));
+    }
+
     async Task<T> ExecuteAsync<T>(Func<Task<T>> call)
     {
         try

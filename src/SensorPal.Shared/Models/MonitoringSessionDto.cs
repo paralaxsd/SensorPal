@@ -8,6 +8,8 @@ public sealed record MonitoringSessionDto(
     bool IsActive,
     bool HasAudio = false)
 {
+    public bool CanDelete => !IsActive;
+
     public string StatusText => IsActive
         ? "● Active"
         : EndedAt is { } end ? FormatDuration(end - StartedAt) : "—";

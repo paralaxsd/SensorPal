@@ -47,4 +47,30 @@ sealed class SessionRepository(IDbContextFactory<SensorPalDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
         return await db.MonitoringSessions.FindAsync(sessionId);
     }
+
+    public async Task<bool> DeleteSessionAsync(long id)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var session = await db.MonitoringSessions
+            .Include(s => s.Events)
+            .FirstOrDefaultAsync(s => s.Id == id);
+
+        if (session is null) return false;
+
+        var files = session.Events
+            .Where(e => e.ClipFile is { })
+            .Select(e => e.ClipFile!)
+            .ToList();
+
+        if (session.BackgroundFile is { } bg)
+            files.Add(bg);
+
+        db.MonitoringSessions.Remove(session);
+        await db.SaveChangesAsync();
+
+        foreach (var f in files.Where(File.Exists))
+            File.Delete(f);
+
+        return true;
+    }
 }

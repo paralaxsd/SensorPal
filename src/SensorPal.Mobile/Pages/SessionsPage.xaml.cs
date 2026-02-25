@@ -33,20 +33,13 @@ public partial class SessionsPage : ContentPage
         catch { /* server may not be running */ }
     }
 
-    void OnSessionSelected(object? sender, SelectionChangedEventArgs e)
+    async void OnSessionRowTapped(object? sender, TappedEventArgs e)
     {
-        if (e.CurrentSelection.FirstOrDefault() is not MonitoringSessionDto session) return;
-        SessionsView.SelectedItem = null;
+        if (e.Parameter is not MonitoringSessionDto session) return;
 
-        // Defer navigation so the SelectionChanged event fully unwinds before
-        // PopModalAsync destroys the PlatformView — otherwise MAUI crashes trying
-        // to update the CollectionView selection state on a null native view.
         var date = session.StartedAt.LocalDateTime.ToString("yyyy-MM-dd");
-        Dispatcher.Dispatch(async () =>
-        {
-            await Navigation.PopModalAsync();
-            await Shell.Current.GoToAsync($"//EventsPage?date={date}");
-        });
+        await Navigation.PopModalAsync();
+        await Shell.Current.GoToAsync($"//EventsPage?date={date}");
     }
 
     async void OnPlaySessionClicked(object? sender, EventArgs e)
@@ -56,6 +49,49 @@ public partial class SessionsPage : ContentPage
         _logger.LogInformation("Opening player for session {SessionId} ({StartedAt}), url={Url}",
             session.Id, session.StartedAt.LocalDateTime, url);
         await this.ShowSessionPlayerAsync(session, url);
+    }
+
+    async void OnDeleteSessionClicked(object? sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: MonitoringSessionDto session }) return;
+        if (!await ConfirmDeleteSessionAsync(session)) return;
+
+        try
+        {
+            await _client.DeleteSessionAsync(session.Id);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete session {Id}", session.Id);
+        }
+    }
+
+    async Task<bool> ConfirmDeleteSessionAsync(MonitoringSessionDto session)
+    {
+        var date = session.StartedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm");
+        var message = $"Delete session from {date} including all events and recordings?";
+#if ANDROID
+        var tcs = new TaskCompletionSource<bool>();
+        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+        if (activity is null) return false;
+        activity.RunOnUiThread(() =>
+        {
+            var dialog = new Android.App.AlertDialog.Builder(activity)
+                .SetTitle("Delete Session")!
+                .SetMessage(message)!
+                .SetPositiveButton("Delete", (_, _) => tcs.TrySetResult(true))!
+                .SetNegativeButton("Cancel", (_, _) => tcs.TrySetResult(false))!
+                .Create()!;
+            dialog.Show();
+            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210);
+            dialog.GetButton(-1)?.SetTextColor(buttonColor);
+            dialog.GetButton(-2)?.SetTextColor(buttonColor);
+        });
+        return await tcs.Task;
+#else
+        return await DisplayAlertAsync("Delete Session", message, "Delete", "Cancel");
+#endif
     }
 
     async void OnCloseClicked(object? sender, EventArgs e)

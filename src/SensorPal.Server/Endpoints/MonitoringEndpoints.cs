@@ -127,6 +127,22 @@ static class MonitoringEndpoints
         .WithSummary("Get event markers for a session")
         .WithDescription("Returns the list of noise events as seek markers, each with the time offset " +
             "into the background MP3 and the wall-clock detection time. Use OffsetSeconds to seek the player.");
+
+        group.MapDelete("/{id}", async (long id, SessionRepository repo, AudioCaptureService capture,
+            ILogger<Log> logger) =>
+        {
+            if (capture.ActiveSessionId == id)
+                return Results.Conflict("Cannot delete the currently active session.");
+
+            var deleted = await repo.DeleteSessionAsync(id);
+            if (!deleted) return Results.NotFound();
+
+            logger.LogInformation("Session {Id} deleted (session + events + files)", id);
+            return Results.Ok();
+        })
+        .WithSummary("Delete a monitoring session")
+        .WithDescription("Deletes the session record, all associated noise events, WAV clip files, " +
+            "and the background MP3. Returns 409 if the session is currently active.");
     }
 
     class Log;

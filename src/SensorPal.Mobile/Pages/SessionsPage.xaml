@@ -20,13 +20,17 @@
 
         <CollectionView Grid.Row="1"
                         x:Name="SessionsView"
-                        SelectionMode="Single"
-                        SelectionChanged="OnSessionSelected"
+                        SelectionMode="None"
                         EmptyView="No sessions yet.">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:MonitoringSessionDto">
-                    <Grid Padding="16,8" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                    <Grid Padding="16,8" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                        <!-- Tap the info area to navigate to EventsPage for that day -->
                         <VerticalStackLayout Grid.Column="0">
+                            <VerticalStackLayout.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSessionRowTapped"
+                                                      CommandParameter="{Binding .}" />
+                            </VerticalStackLayout.GestureRecognizers>
                             <Label Text="{Binding StartedAt, Converter={StaticResource LocalDateTime}}"
                                    FontAttributes="Bold" />
                             <Label Text="{Binding EventCount, StringFormat='{0} event(s)'}"
@@ -45,6 +49,16 @@
                                 Clicked="OnPlaySessionClicked"
                                 Padding="4,0"
                                 ToolTipProperties.Text="Play continuous background recording for this session" />
+                        <Button Grid.Column="3"
+                                Text="🗑"
+                                FontSize="16"
+                                BackgroundColor="Transparent"
+                                TextColor="OrangeRed"
+                                IsEnabled="{Binding CanDelete}"
+                                CommandParameter="{Binding .}"
+                                Clicked="OnDeleteSessionClicked"
+                                Padding="4,0"
+                                ToolTipProperties.Text="Delete this session and all its recordings" />
                     </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
