@@ -70,13 +70,37 @@ sealed class SensorPalForegroundService : Android.App.Service
         var client = IPlatformApplication.Current?.Services.GetRequiredService<SensorPalClient>();
         var notificationService = GetNotificationService();
 
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-        while (await timer.WaitForNextTickAsync(ct))
+        while (!ct.IsCancellationRequested)
         {
+            // Poll less aggressively when the screen is off — the user won't
+            // see the notification immediately anyway.
+            var pm = GetSystemService(PowerService) as Android.OS.PowerManager;
+            var interval = pm?.IsInteractive == true
+                ? TimeSpan.FromSeconds(30)
+                : TimeSpan.FromMinutes(5);
+
+            try
+            {
+                await Task.Delay(interval, ct);
+            }
+            catch (System.OperationCanceledException)
+            {
+                return;
+            }
+
             try
             {
                 if (client is null || notificationService is null) continue;
                 var level = await client.GetLevelAsync();
+
+                // level == null means the server is unreachable — keep running.
+                // level != null but no active session means monitoring has ended — stop.
+                if (level is not null && !level.ActiveSessionStartedAt.HasValue)
+                {
+                    StopSelf();
+                    return;
+                }
+
                 await notificationService.NotifyIfNewEventAsync(level);
             }
             catch { /* server unreachable — ignore */ }

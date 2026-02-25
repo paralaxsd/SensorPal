@@ -68,10 +68,7 @@ public sealed class NotificationService : IDisposable
             }
         }
 
-        // Persist before starting the service — OnStartCommand checks IsEnabled.
         IsEnabled = true;
-        ResetEventCount();
-        StartAndroidForegroundService();
 #else
         IsEnabled = true;
         ResetEventCount();
@@ -90,6 +87,30 @@ public sealed class NotificationService : IDisposable
         StopAndroidForegroundService();
 #else
         StopPollLoop();
+#endif
+    }
+
+    /// <summary>
+    /// Called when a monitoring session starts.
+    /// Starts the Android foreground service if notifications are enabled.
+    /// </summary>
+    public void OnMonitoringStarted()
+    {
+        ResetEventCount();
+#if ANDROID
+        if (IsEnabled)
+            StartAndroidForegroundService();
+#endif
+    }
+
+    /// <summary>
+    /// Called when a monitoring session ends.
+    /// Stops the Android foreground service immediately.
+    /// </summary>
+    public void OnMonitoringStopped()
+    {
+#if ANDROID
+        StopAndroidForegroundService();
 #endif
     }
 

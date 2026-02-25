@@ -91,6 +91,7 @@ public partial class MonitoringPage : ContentPage
 
         _isMonitoring = true;
         _monitoringStartedAt = DateTimeOffset.UtcNow;
+        _notificationService.OnMonitoringStarted();
         UpdateToggleUi();
         await LoadSessionsAsync();
     }
@@ -100,6 +101,7 @@ public partial class MonitoringPage : ContentPage
         await _client.StopMonitoringAsync();
 
         _isMonitoring = false;
+        _notificationService.OnMonitoringStopped();
         UpdateToggleUi();
         await LoadSessionsAsync();
     }
@@ -132,6 +134,7 @@ public partial class MonitoringPage : ContentPage
             && DateTimeOffset.UtcNow - _monitoringStartedAt > TimeSpan.FromSeconds(2))
         {
             _isMonitoring = false;
+            _notificationService.OnMonitoringStopped();
             UpdateToggleUi();
             await LoadSessionsAsync();
         }
