@@ -4,15 +4,15 @@ namespace SensorPal.Server.Endpoints;
 
 static class StatusEndpoints
 {
-    public static void MapStatusEndpoints(this IEndpointRouteBuilder app)
+    public static void MapStatusEndpoints(this IEndpointRouteBuilder app, TimeProvider time)
     {
-        var startedAt = DateTimeOffset.Now;
+        var startedAt = time.GetLocalNow();
 
         app.MapGet("/status", (MonitoringStateService state) => new StatusDto
         {
             Name = "SensorPal",
             StartedAt = startedAt,
-            Now = DateTimeOffset.Now,
+            Now = time.GetLocalNow(),
             Mode = state.State.ToString()
         })
         .WithSummary("Server health and current monitoring mode")

@@ -81,6 +81,7 @@ static class Program
         services.AddSingleton<SettingsRepository>();
 
         // Core services
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton<MonitoringStateService>();
         services.AddSingleton<AudioCaptureService>();
         services.AddHostedService(sp => sp.GetRequiredService<AudioCaptureService>());
@@ -98,9 +99,10 @@ static class Program
     static async Task FixDanglingActiveSessions(WebApplication app, SensorPalDbContext ctx)
     {
         // Close any sessions left open by a previous crash
+        var now = app.Services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
         var closed = await ctx.MonitoringSessions
             .Where(s => s.EndedAt == null)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.EndedAt, DateTime.UtcNow));
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.EndedAt, now));
         if (closed > 0)
             app.Logger.LogWarning("Closed {Count} stale session(s) from previous crash", closed);
     }
@@ -149,7 +151,7 @@ static class Program
             await next(ctx);
         });
 
-        app.MapStatusEndpoints();
+        app.MapStatusEndpoints(app.Services.GetRequiredService<TimeProvider>());
         app.MapMonitoringEndpoints();
         app.MapAudioDeviceEndpoints();
         app.MapEventEndpoints();

@@ -3,14 +3,14 @@ using SensorPal.Server.Entities;
 
 namespace SensorPal.Server.Storage;
 
-sealed class SessionRepository(IDbContextFactory<SensorPalDbContext> factory)
+sealed class SessionRepository(IDbContextFactory<SensorPalDbContext> factory, TimeProvider time)
 {
     public async Task<long> StartSessionAsync(string backgroundFile)
     {
         await using var db = await factory.CreateDbContextAsync();
         var session = new MonitoringSession
         {
-            StartedAt = DateTime.UtcNow,
+            StartedAt = time.GetUtcNow().UtcDateTime,
             BackgroundFile = backgroundFile
         };
         db.MonitoringSessions.Add(session);
@@ -20,10 +20,11 @@ sealed class SessionRepository(IDbContextFactory<SensorPalDbContext> factory)
 
     public async Task EndSessionAsync(long sessionId)
     {
+        var now = time.GetUtcNow().UtcDateTime;
         await using var db = await factory.CreateDbContextAsync();
         await db.MonitoringSessions
             .Where(s => s.Id == sessionId)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.EndedAt, DateTime.UtcNow));
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.EndedAt, now));
     }
 
     public async Task IncrementEventCountAsync(long sessionId)

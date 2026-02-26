@@ -15,11 +15,11 @@ static class EventEndpoints
         .WithDescription("Returns a sorted array of dates (yyyy-MM-dd) for which at least one " +
             "noise event exists. Used by the mobile app to implement skip-empty-days navigation.");
 
-        group.MapGet("/", async (string? date, EventRepository repo) =>
+        group.MapGet("/", async (string? date, EventRepository repo, TimeProvider time) =>
         {
             var day = date is not null
                 ? DateOnly.Parse(date)
-                : DateOnly.FromDateTime(DateTime.Now);
+                : DateOnly.FromDateTime(time.GetLocalNow().DateTime);
 
             var evts = await repo.GetEventsByDateAsync(day);
             return evts.Select(ToDto).ToList();
@@ -49,11 +49,11 @@ static class EventEndpoints
         .WithDescription("Streams the short WAV audio clip recorded around the noise event, " +
             "including pre-roll and post-roll silence. Returns 404 if the clip file is missing.");
 
-        group.MapDelete("/", async (string? date, EventRepository repo, ILogger<Log> logger) =>
+        group.MapDelete("/", async (string? date, EventRepository repo, TimeProvider time, ILogger<Log> logger) =>
         {
             var day = date is not null
                 ? DateOnly.Parse(date)
-                : DateOnly.FromDateTime(DateTime.Now);
+                : DateOnly.FromDateTime(time.GetLocalNow().DateTime);
 
             var count = await repo.DeleteEventsByDateAsync(day);
             logger.LogInformation("Deleted {Count} event(s) for {Date}", count, day);

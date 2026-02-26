@@ -7,6 +7,7 @@ sealed class NoiseDetector
     readonly double _thresholdDb;
     readonly int _silenceTimeoutMs;
     readonly WaveFormat _format;
+    readonly TimeProvider _time;
 
     bool _eventActive;
     DateTime _eventStart;
@@ -20,10 +21,11 @@ sealed class NoiseDetector
     public bool IsEventActive => _eventActive;
     public DateTime? EventStartedAt => _eventActive ? _eventStart : null;
 
-    public NoiseDetector(double thresholdDb, WaveFormat format, int silenceTimeoutMs = 5000)
+    public NoiseDetector(double thresholdDb, WaveFormat format, TimeProvider time, int silenceTimeoutMs = 5000)
     {
         _thresholdDb = thresholdDb;
         _format = format;
+        _time = time;
         _silenceTimeoutMs = silenceTimeoutMs;
     }
 
@@ -32,7 +34,7 @@ sealed class NoiseDetector
         var rmsDb = CalculateRmsDb(buffer, offset, count);
         CurrentDb = rmsDb;
 
-        var now = DateTime.UtcNow;
+        var now = _time.GetUtcNow().UtcDateTime;
         var isLoud = rmsDb >= _thresholdDb;
 
         if (!_eventActive)
@@ -40,7 +42,7 @@ sealed class NoiseDetector
             if (!isLoud) return;
 
             _eventActive = true;
-            _eventStart = DateTime.UtcNow;
+            _eventStart = now;
             _peakDb = rmsDb;
             _lastSignalTime = now;
             EventStarted?.Invoke(_eventStart, rmsDb);

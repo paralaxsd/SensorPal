@@ -10,7 +10,7 @@ namespace SensorPal.Server.Services;
 
 sealed class AudioCaptureService(
     IOptions<AudioConfig> options, MonitoringStateService stateService, SessionRepository sessions,
-    EventRepository events, SettingsRepository settings, AudioStorage storage,
+    EventRepository events, SettingsRepository settings, AudioStorage storage, TimeProvider time,
     ILogger<AudioCaptureService> logger, ILogger<ClipRecorder> clipLogger) : IHostedService, IDisposable
 {
     /******************************************************************************************
@@ -100,7 +100,7 @@ sealed class AudioCaptureService(
         var postRollMs = s.PostRollSeconds * 1000;
 
         _sessionEventCount = 0;
-        _backgroundStart = DateTime.UtcNow;
+        _backgroundStart = time.GetUtcNow().UtcDateTime;
         var backgroundFile = storage.GetBackgroundFilePath(_backgroundStart);
         _backgroundWriter = new LameMP3FileWriter(backgroundFile, _captureFormat, s.BackgroundBitrate);
 
@@ -184,7 +184,7 @@ sealed class AudioCaptureService(
         var device = FindDevice(_config.DeviceName);
         _capture = new WasapiCapture(device);
         _captureFormat = _capture.WaveFormat;
-        _detector = new NoiseDetector(s.NoiseThresholdDb, _captureFormat);
+        _detector = new NoiseDetector(s.NoiseThresholdDb, _captureFormat, time);
         return (s, device.FriendlyName);
     }
 
