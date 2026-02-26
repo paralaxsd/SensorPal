@@ -51,6 +51,23 @@ Three projects in `src/`:
 - NAudio WASAPI types are in `NAudio.CoreAudioApi` (not `NAudio.Wave`) — requires the `NAudio.Wasapi` NuGet package separately from `NAudio`.
 - New EF Core schema changes require a migration: `dotnet ef migrations add <Name> --project src/SensorPal.Server`.
 
+## Git Workflow
+
+- **Never commit without explicit approval** — after completing a task, present a summary of changes and wait for the user to say "commit" (or similar) before running `git commit`.
+- **Never push without explicit approval** — same rule applies to `git push`.
+
+## Build & CI
+
+- When working with Nuke build automation, always use the attribute-based approach (e.g., `[GitHubActions]` attributes) to generate CI YAML files. Never manually edit Nuke-generated YAML files directly.
+
+## Tech Stack Notes
+
+This is a .NET MAUI / .NET ecosystem project. Be aware of:
+- **AOT compilation constraints** — not all reflection-heavy APIs are AOT-safe; check AOT compatibility first when debugging unexplained runtime failures.
+- **MAUI threading requirements** — UI updates must run on the main thread; use `Dispatcher.Dispatch` / `MainThread.BeginInvokeOnMainThread`.
+- **Platform-specific API differences** — behavior on Android vs. Windows can differ significantly; check platform first when debugging.
+- When debugging, check AOT compatibility and threading before other hypotheses.
+
 ## Nuke Build
 
 The solution uses [Nuke](https://nuke.build) as its build automation tool. The build project lives in `build/SensorPal.Build.csproj` and is invoked via the bootstrapper scripts in the repo root. No global Nuke installation required — just a working .NET SDK.
