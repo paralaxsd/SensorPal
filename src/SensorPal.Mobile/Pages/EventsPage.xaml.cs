@@ -11,6 +11,8 @@ public partial class EventsPage : ContentPage, IQueryAttributable
     readonly ConnectivityService _connectivity;
     readonly ILogger<EventsPage> _logger;
 
+    const string SkipEmptyDaysPrefKey = "events_skip_empty_days";
+
     IAudioPlayer? _player;
     EventRowVm? _currentVm;
     IDispatcherTimer? _timer;
@@ -18,6 +20,7 @@ public partial class EventsPage : ContentPage, IQueryAttributable
     DateOnly _selectedDate = DateOnly.FromDateTime(DateTime.Today);
     DateOnly? _pendingDate;
     bool _hasAppeared;
+    SortedSet<DateOnly> _activeDays = [];
 
     public EventsPage(SensorPalClient client, IAudioManager audio,
         ConnectivityService connectivity, ILogger<EventsPage> logger)
@@ -28,6 +31,7 @@ public partial class EventsPage : ContentPage, IQueryAttributable
         _logger = logger;
         InitializeComponent();
         DateSelector.Date = DateTime.Today;
+        SkipEmptyDaysSwitch.IsToggled = Preferences.Get(SkipEmptyDaysPrefKey, false);
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -53,6 +57,9 @@ public partial class EventsPage : ContentPage, IQueryAttributable
         base.OnAppearing();
         _hasAppeared = true;
         _connectivity.ConnectivityChanged += OnConnectivityChanged;
+
+        if (SkipEmptyDaysSwitch.IsToggled)
+            _ = RefreshActiveDaysAsync();
 
         if (_pendingDate.HasValue)
         {
@@ -98,15 +105,51 @@ public partial class EventsPage : ContentPage, IQueryAttributable
 
     void OnPrevDayClicked(object? sender, EventArgs e)
     {
-        var current = DateSelector.Date ?? DateTime.Today;
-        DateSelector.Date = current.AddDays(-1);
+        var current = DateOnly.FromDateTime(DateSelector.Date ?? DateTime.Today);
+        if (SkipEmptyDaysSwitch.IsToggled && _activeDays.Count > 0)
+        {
+            var prev = _activeDays.Reverse().FirstOrDefault(d => d < current);
+            if (prev != default)
+                DateSelector.Date = prev.ToDateTime(TimeOnly.MinValue);
+        }
+        else
+        {
+            DateSelector.Date = current.ToDateTime(TimeOnly.MinValue).AddDays(-1);
+        }
     }
 
     void OnNextDayClicked(object? sender, EventArgs e)
     {
-        var current = DateSelector.Date ?? DateTime.Today;
-        if (current.Date < DateTime.Today)
-            DateSelector.Date = current.AddDays(1);
+        var current = DateOnly.FromDateTime(DateSelector.Date ?? DateTime.Today);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (SkipEmptyDaysSwitch.IsToggled && _activeDays.Count > 0)
+        {
+            var next = _activeDays.FirstOrDefault(d => d > current && d <= today);
+            if (next != default)
+                DateSelector.Date = next.ToDateTime(TimeOnly.MinValue);
+        }
+        else
+        {
+            if (current < today)
+                DateSelector.Date = current.ToDateTime(TimeOnly.MinValue).AddDays(1);
+        }
+    }
+
+    void OnSkipEmptyDaysToggled(object? sender, ToggledEventArgs e)
+    {
+        Preferences.Set(SkipEmptyDaysPrefKey, e.Value);
+        if (e.Value)
+            _ = RefreshActiveDaysAsync();
+    }
+
+    async Task RefreshActiveDaysAsync()
+    {
+        try
+        {
+            var days = await _client.GetEventDaysAsync();
+            _activeDays = new SortedSet<DateOnly>(days);
+        }
+        catch { _activeDays = []; }
     }
 
     async void OnPlayClicked(object? sender, EventArgs e)

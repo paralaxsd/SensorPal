@@ -9,6 +9,12 @@ static class EventEndpoints
     {
         var group = app.MapGroup("/events");
 
+        group.MapGet("/days", async (EventRepository repo) =>
+            await repo.GetDaysWithEventsAsync())
+        .WithSummary("List all days that have noise events")
+        .WithDescription("Returns a sorted array of dates (yyyy-MM-dd) for which at least one " +
+            "noise event exists. Used by the mobile app to implement skip-empty-days navigation.");
+
         group.MapGet("/", async (string? date, EventRepository repo) =>
         {
             var day = date is not null

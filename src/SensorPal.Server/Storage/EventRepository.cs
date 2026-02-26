@@ -57,6 +57,23 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
             .ToListAsync();
     }
 
+    public async Task<DateOnly[]> GetDaysWithEventsAsync()
+    {
+        await using var db = await factory.CreateDbContextAsync();
+
+        // Load full UTC timestamps — converting .Date first and then ToLocalTime() would
+        // yield the wrong local date for events that cross midnight in UTC (e.g. 23:30 UTC
+        // = 00:30 the next day locally). We convert each full timestamp instead.
+        var utcTimestamps = await db.NoiseEvents
+            .Select(e => e.DetectedAt)
+            .ToListAsync();
+
+        return [.. utcTimestamps
+            .Select(dt => DateOnly.FromDateTime(DateTime.SpecifyKind(dt, DateTimeKind.Utc).ToLocalTime()))
+            .Distinct()
+            .OrderBy(d => d)];
+    }
+
     public async Task<int> DeleteEventsByDateAsync(DateOnly date)
     {
         await using var db = await factory.CreateDbContextAsync();

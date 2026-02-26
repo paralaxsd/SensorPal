@@ -15,6 +15,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -34,8 +35,14 @@
                     FontSize="18" Clicked="OnDeleteDayClicked" />
         </Grid>
 
+        <!-- Skip-empty-days toggle -->
+        <HorizontalStackLayout Grid.Row="1" HorizontalOptions="Center" Spacing="8" Margin="0,0,0,8">
+            <Label Text="Skip empty days" VerticalOptions="Center" FontSize="14" />
+            <Switch x:Name="SkipEmptyDaysSwitch" Toggled="OnSkipEmptyDaysToggled" VerticalOptions="Center" />
+        </HorizontalStackLayout>
+
         <!-- Auth error banner -->
-        <Label Grid.Row="1"
+        <Label Grid.Row="2"
                x:Name="AuthErrorLabel"
                IsVisible="False"
                Text="⚠ API key not configured — open the Settings tab"
@@ -45,7 +52,7 @@
                Margin="0,0,0,8" />
 
         <!-- Event list — fills remaining space, never resizes -->
-        <CollectionView Grid.Row="2"
+        <CollectionView Grid.Row="3"
                         x:Name="EventsView"
                         SelectionMode="None"
                         EmptyView="No noise events for this day.">
@@ -79,7 +86,7 @@
         </CollectionView>
 
         <!-- Playback panel — overlays the list from the top, no layout shift -->
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 x:Name="PlaybackPanel"
                 IsVisible="False"
                 VerticalOptions="Start"

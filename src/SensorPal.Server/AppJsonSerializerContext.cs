@@ -15,6 +15,7 @@ namespace SensorPal.Server;
 [JsonSerializable(typeof(SettingsDto))]
 [JsonSerializable(typeof(EventMarkerDto))]
 [JsonSerializable(typeof(IReadOnlyList<EventMarkerDto>))]
+[JsonSerializable(typeof(DateOnly[]))]
 partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

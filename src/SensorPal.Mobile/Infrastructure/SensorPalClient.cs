@@ -98,6 +98,13 @@ public sealed class SensorPalClient
         return list ?? [];
     }
 
+    public async Task<DateOnly[]> GetEventDaysAsync()
+    {
+        var days = await ExecuteAsync(
+            () => _http.GetFromJsonAsync<DateOnly[]>($"{BaseUrl}/events/days"));
+        return days ?? [];
+    }
+
     public async Task<IReadOnlyList<MonitoringSessionDto>> GetSessionsAsync()
     {
         var list = await ExecuteAsync(
