@@ -33,7 +33,10 @@ public partial class AppShell
         _started = true;
         _dialog.OpenSettingsAsync = OpenSettingsAsync;
         _dialog.Start();
+        HookMouseBack();
     }
+
+    partial void HookMouseBack();
 
     async Task OpenSettingsAsync()
     {
