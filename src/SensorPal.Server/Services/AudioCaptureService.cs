@@ -131,10 +131,10 @@ sealed class AudioCaptureService(
 
         _capture.DataAvailable -= OnDataAvailable;
 
-        if (_detector is { })
+        if (_detector is { } detector && _clipRecorder is { } clipRecorder)
         {
-            _detector.EventStarted -= _clipRecorder!.OnEventStarted;
-            _detector.EventEnded -= _clipRecorder!.OnEventEnded;
+            detector.EventStarted -= clipRecorder.OnEventStarted;
+            detector.EventEnded -= clipRecorder.OnEventEnded;
         }
 
         _clipRecorder?.FinishClipIfActive();
