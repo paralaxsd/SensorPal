@@ -24,7 +24,10 @@
     <Project Path="src/SensorPal.Server/SensorPal.Server.csproj" />
     <Project Path="src/SensorPal.Shared/SensorPal.Shared.csproj" Id="bd21f87b-f35a-45f3-84db-a97560d9ccc8" />
   </Folder>
-  <Folder Name="/02 build/">
+  <Folder Name="/02 tests/">
+    <Project Path="tests/SensorPal.IntegrationTests/SensorPal.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/03 build/">
     <Project Path="build/SensorPal.Build.csproj">
       <Build Project="false" />
     </Project>

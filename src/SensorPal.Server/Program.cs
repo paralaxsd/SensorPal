@@ -9,6 +9,8 @@ namespace SensorPal.Server;
 
 static class Program
 {
+    public class EntryPoint;
+
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
