@@ -9,6 +9,7 @@ using SensorPal.Mobile.Logging;
 using SensorPal.Mobile.Pages;
 using SensorPal.Mobile.Services;
 using System.Reflection;
+using System.ComponentModel.DataAnnotations;
 
 namespace SensorPal.Mobile;
 
@@ -78,11 +79,17 @@ public static class MauiProgram
 
     static void RegisterConfigBindings(MauiAppBuilder builder)
     {
-        // Use direct key lookup instead of reflection-based ConfigurationBinder so that
-        // this code is safe under PublishTrimmed=true (AOT builds).
-        var baseUrl = builder.Configuration["ServerConfig:BaseUrl"]
-            ?? throw new InvalidOperationException("ServerConfig:BaseUrl is required in appsettings");
-        builder.Services.AddSingleton(Options.Create(new ServerConfig { BaseUrl = baseUrl }));
+        var configuration = builder.Configuration.GetSection("ServerConfig");
+        var serverConfig = new ServerConfig
+        {
+            BaseUrl = configuration["BaseUrl"] ?? throw new InvalidOperationException("ServerConfig:BaseUrl is required")
+        };
+
+        // Validate manually
+        var validationContext = new ValidationContext(serverConfig);
+        Validator.ValidateObject(serverConfig, validationContext, validateAllProperties: true);
+
+        builder.Services.AddSingleton(Options.Create(serverConfig));
     }
 
     static void AddLogging(MauiAppBuilder builder)
