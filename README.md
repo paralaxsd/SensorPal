@@ -1,4 +1,4 @@
-# SensorPal [![ci-android](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-android.yml/badge.svg)](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-android.yml) [![ci-server](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-server.yml/badge.svg)](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-server.yml)
+# SensorPal [![ci-android](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-android.yml/badge.svg)](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-android.yml) [![tests](https://github.com/paralaxsd/SensorPal/actions/workflows/tests.yml/badge.svg)](https://github.com/paralaxsd/SensorPal/actions/workflows/tests.yml)
 
 Night-time noise monitoring for Windows + Android. Captures audio from a USB audio interface, detects noise events above a configurable threshold, records WAV clips with pre/post-roll, and lets you browse and play back events from a MAUI mobile app.
 
