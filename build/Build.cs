@@ -82,6 +82,7 @@ sealed class Build : NukeBuild
             var testProjects = TestsDir.GlobFiles("**/*Tests*.csproj");
             DotNetTest(s => s
                 .SetConfiguration(Configuration)
+                .AddLoggers("GitHubActions")
                 .CombineWith(testProjects, (s, p) => s.SetProjectFile(p)));
         });
 
