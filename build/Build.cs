@@ -9,7 +9,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Serilog.Core;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 // ReSharper disable UnusedMember.Local
 // ReSharper disable AllUnderscoreLocalParameterName
@@ -20,9 +19,9 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
     InvokedTargets = [nameof(PublishAndroid)], PublishArtifacts = true,
     FetchDepth = 0)]
 [GitHubActions(
-    "ci-server", GitHubActionsImage.WindowsLatest,
+    "tests", GitHubActionsImage.WindowsLatest,
     On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.WorkflowDispatch],
-    InvokedTargets = [nameof(PublishServer)], PublishArtifacts = true, 
+    InvokedTargets = [nameof(Test)],
     FetchDepth = 0)]
 sealed class Build : NukeBuild
 {
@@ -48,23 +47,28 @@ sealed class Build : NukeBuild
     AbsolutePath MobileProject => RootDirectory / "src" / "SensorPal.Mobile" / "SensorPal.Mobile.csproj";
     AbsolutePath ServerProject => RootDirectory / "src" / "SensorPal.Server" / "SensorPal.Server.csproj";
     AbsolutePath ArtifactsDir => RootDirectory / "artifacts";
+    AbsolutePath TestsDir => RootDirectory / "tests";
 
     Target Clean => _ => _
+        .Description("Remove all build outputs")
         .Before(Restore)
         .Executes(() => DotNetClean(s => s
             .SetProject(SolutionFile)
             .SetConfiguration(Configuration)));
 
     Target InstallWorkloads => _ => _
+        .Description("Install the maui-android workload (CI only)")
         .OnlyWhenDynamic(() => !IsLocalBuild)
         .Executes(() => DotNet("workload install maui-android"));
 
     Target Restore => _ => _
+        .Description("Restore NuGet packages for the entire solution")
         .DependsOn(InstallWorkloads)
         .Executes(() => DotNetRestore(s => s
             .SetProjectFile(SolutionFile)));
 
     Target Compile => _ => _
+        .Description("Build the entire solution (server + mobile + shared)")
         .DependsOn(Restore)
         .Executes(() => DotNetBuild(s => s
             .SetProjectFile(SolutionFile)
@@ -72,14 +76,17 @@ sealed class Build : NukeBuild
             .EnableNoRestore()));
 
     Target Test => _ => _
-        .DependsOn(Compile)
-        .Executes(() => DotNetTest(s => s
-            .SetProjectFile(SolutionFile)
-            .SetConfiguration(Configuration)
-            .EnableNoRestore()
-            .EnableNoBuild()));
+        .Description("Build and run all test projects discovered under tests/")
+        .Executes(() =>
+        {
+            var testProjects = TestsDir.GlobFiles("**/*Tests*.csproj");
+            DotNetTest(s => s
+                .SetConfiguration(Configuration)
+                .CombineWith(testProjects, (s, p) => s.SetProjectFile(p)));
+        });
 
     Target PublishAndroid => _ => _
+        .Description("Build a Release Android APK and place it in artifacts/android")
         .DependsOn(Restore)
         .Produces(RootDirectory / "artifacts" / "android")
         .Executes(() => DotNetBuild(s => s
@@ -90,6 +97,7 @@ sealed class Build : NukeBuild
             .SetOutputDirectory(ArtifactsDir / "android")));
 
     Target PublishServer => _ => _
+        .Description("Publish a self-contained Release server build to artifacts/server")
         .DependsOn(Restore)
         .Produces(RootDirectory / "artifacts" / "server")
         .Executes(() => DotNetPublish(s => s
@@ -99,9 +107,11 @@ sealed class Build : NukeBuild
             .SetOutput(ArtifactsDir / "server")));
 
     Target DeployAndroid => _ => _
+        .Description("Build and deploy the Android app to a connected device via ADB (use --device-id to target a specific device, --aot for AOT)")
         .Executes(DeployToAndroidDevice);
 
     Target ListAndroidDevices => _ => _
+        .Description("List all Android devices currently visible to ADB")
         .Executes(ListAllAndroidDevices);
 
     /******************************************************************************************
