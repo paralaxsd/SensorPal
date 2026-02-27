@@ -1,0 +1,31 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Solution",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"SensorPal.slnx"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run Server",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"src/SensorPal.Server"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
