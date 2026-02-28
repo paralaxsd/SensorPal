@@ -11,7 +11,8 @@ namespace SensorPal.Server.Services;
 sealed class AudioCaptureService(
     IOptions<AudioConfig> options, MonitoringStateService stateService, SessionRepository sessions,
     EventRepository events, SettingsRepository settings, AudioStorage storage, TimeProvider time,
-    ILogger<AudioCaptureService> logger, ILogger<ClipRecorder> clipLogger) : IHostedService, IDisposable
+    ILogger<AudioCaptureService> logger, ILogger<ClipRecorder> clipLogger)
+    : IAudioCaptureService, IHostedService, IDisposable
 {
     /******************************************************************************************
      * FIELDS

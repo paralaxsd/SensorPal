@@ -55,6 +55,7 @@ Three projects in `src/`:
 
 - **Never commit without explicit approval** — after completing a task, present a summary of changes and wait for the user to say "commit" (or similar) before running `git commit`.
 - **Never push without explicit approval** — same rule applies to `git push`.
+- **Commit title style** — plain, descriptive titles. No conventional commit prefixes (feat/fix/chore/refactor/etc.).
 
 ## Build & CI
 

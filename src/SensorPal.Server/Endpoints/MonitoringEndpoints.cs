@@ -66,7 +66,7 @@ static class MonitoringEndpoints
         .WithDescription("Streams the continuous background MP3 recorded during the monitoring session. " +
             "Supports HTTP Range requests for seeking. Returns 404 if no background file was recorded.");
 
-        group.MapGet("/level", async (AudioCaptureService capture, SettingsRepository settingsRepo,
+        group.MapGet("/level", async (IAudioCaptureService capture, SettingsRepository settingsRepo,
             MonitoringStateService stateService) =>
         {
             var settings = await settingsRepo.GetAsync();
@@ -128,7 +128,7 @@ static class MonitoringEndpoints
         .WithDescription("Returns the list of noise events as seek markers, each with the time offset " +
             "into the background MP3 and the wall-clock detection time. Use OffsetSeconds to seek the player.");
 
-        group.MapDelete("/{id}", async (long id, SessionRepository repo, AudioCaptureService capture,
+        group.MapDelete("/{id}", async (long id, SessionRepository repo, IAudioCaptureService capture,
             ILogger<Log> logger) =>
         {
             if (capture.ActiveSessionId == id)

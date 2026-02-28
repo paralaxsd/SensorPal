@@ -85,8 +85,10 @@ static class Program
         // Core services
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<MonitoringStateService>();
-        services.AddSingleton<AudioCaptureService>();
-        services.AddHostedService(sp => sp.GetRequiredService<AudioCaptureService>());
+        // IAudioCaptureService owns the singleton lifecycle (disposal).
+        // IHostedService reuses the same instance via cast — no double-dispose.
+        services.AddSingleton<IAudioCaptureService, AudioCaptureService>();
+        services.AddHostedService(sp => (AudioCaptureService)sp.GetRequiredService<IAudioCaptureService>());
     }
 
     static async Task EnsureAndMigrateDbAsync(WebApplication app)
