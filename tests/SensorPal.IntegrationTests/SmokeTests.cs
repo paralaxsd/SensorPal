@@ -1,4 +1,5 @@
 using Alba;
+using Shouldly;
 using SensorPal.Shared.Models;
 using System.Text.Json.Nodes;
 using Xunit;
@@ -18,7 +19,7 @@ public class SmokeTests(AppFixture app) : IClassFixture<AppFixture>
     [Fact]
     public async Task MonitoringLifecycle_TogglesMode_AndMonitoringEndpointsRespond()
     {
-        Assert.Equal("Idle", await GetModeAsync());
+        (await GetModeAsync()).ShouldBe("Idle");
 
         await app.Host.Scenario(s =>
         {
@@ -26,7 +27,7 @@ public class SmokeTests(AppFixture app) : IClassFixture<AppFixture>
             s.StatusCodeShouldBeOk();
         });
 
-        Assert.Equal("Monitoring", await GetModeAsync());
+        (await GetModeAsync()).ShouldBe("Monitoring");
 
         await app.Host.Scenario(s =>
         {
@@ -39,7 +40,7 @@ public class SmokeTests(AppFixture app) : IClassFixture<AppFixture>
             s.Get.Url("/monitoring/sessions");
             s.StatusCodeShouldBeOk();
         });
-        Assert.NotNull(sessionsResult.ReadAsJson<List<MonitoringSessionDto>>());
+        sessionsResult.ReadAsJson<List<MonitoringSessionDto>>().ShouldNotBeNull();
 
         await app.Host.Scenario(s =>
         {
@@ -47,7 +48,7 @@ public class SmokeTests(AppFixture app) : IClassFixture<AppFixture>
             s.StatusCodeShouldBeOk();
         });
 
-        Assert.Equal("Idle", await GetModeAsync());
+        (await GetModeAsync()).ShouldBe("Idle");
     }
 
     async Task<string?> GetModeAsync()
