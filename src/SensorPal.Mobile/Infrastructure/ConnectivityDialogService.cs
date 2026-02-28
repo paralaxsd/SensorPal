@@ -19,6 +19,7 @@ public sealed class ConnectivityDialogService(
 
     bool _dialogVisible;
     bool _started;
+    bool _resumeGrace;
 
     /// <summary>Called when the user taps "Settings" in the offline dialog.</summary>
     public Func<Task>? OpenSettingsAsync { get; set; }
@@ -45,18 +46,45 @@ public sealed class ConnectivityDialogService(
 
     public async Task CheckOnResumeAsync()
     {
-        // Do a fresh ping first — the cached IsServerReachable may be stale due to Android
-        // Doze mode suppressing background network requests while the screen was off.
-        await connectivity.CheckNowAsync();
+        logger.LogDebug("CheckOnResumeAsync: start (dialogVisible={Dialog})", _dialogVisible);
+
+        // Suppress OnConnectivityChanged-triggered dialogs for the duration of this check.
+        // Without this flag, CheckNowAsync firing UpdateState(false) → ConnectivityChanged →
+        // OnConnectivityChanged would post ShowOfflineDialogAsync to the main-thread queue;
+        // Task.Delay then yields the thread, letting the dialog show before the retry fires.
+        _resumeGrace = true;
+        try
+        {
+            await connectivity.CheckNowAsync();
+            logger.LogDebug("CheckOnResumeAsync: first ping — reachable={Reachable}", connectivity.IsServerReachable);
+
+            if (connectivity.IsServerReachable || _dialogVisible) return;
+
+            // Android's network stack needs a moment to fully recover after Doze mode or
+            // process resume. Wait briefly and retry before interrupting the user with a dialog.
+            logger.LogDebug("CheckOnResumeAsync: waiting 1.5 s for network recovery");
+            await Task.Delay(1500);
+
+            await connectivity.CheckNowAsync();
+            logger.LogDebug("CheckOnResumeAsync: second ping — reachable={Reachable}", connectivity.IsServerReachable);
+        }
+        finally
+        {
+            _resumeGrace = false;
+        }
 
         if (!connectivity.IsServerReachable && !_dialogVisible)
+        {
+            logger.LogWarning("CheckOnResumeAsync: server still unreachable after grace period — showing dialog");
             MainThread.BeginInvokeOnMainThread(() => _ = ShowOfflineDialogAsync());
+        }
     }
 
     void OnConnectivityChanged(bool isReachable)
     {
-        logger.LogDebug("Connectivity changed to {Reachable}", isReachable);
-        if (isReachable || _dialogVisible) return;
+        logger.LogDebug("OnConnectivityChanged: reachable={Reachable} dialogVisible={Dialog} resumeGrace={Grace}",
+            isReachable, _dialogVisible, _resumeGrace);
+        if (isReachable || _dialogVisible || _resumeGrace) return;
 
         // Don't show the dialog while any modal page is on top (e.g. Settings).
         // The user is actively configuring the app and needs to finish first.

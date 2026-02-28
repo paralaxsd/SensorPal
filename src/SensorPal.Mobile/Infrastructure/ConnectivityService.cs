@@ -16,8 +16,10 @@ public sealed class ConnectivityService(
 
     CancellationTokenSource? _cts;
     bool _disposed;
+    int _consecutiveFailures;
 
     static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(60);
+    const int OfflineThreshold = 3;
 
     /******************************************************************************************
      * PROPERTIES
@@ -71,7 +73,26 @@ public sealed class ConnectivityService(
         return reachable;
     }
 
-    public void ReportResult(bool reachable) => UpdateState(reachable);
+    /// <summary>
+    /// Reports the outcome of an HTTP request. Transitions to offline only after
+    /// <see cref="OfflineThreshold"/> consecutive failures to avoid spurious dialogs
+    /// from transient level-poll hiccups.
+    /// </summary>
+    public void ReportResult(bool reachable)
+    {
+        if (reachable)
+        {
+            Interlocked.Exchange(ref _consecutiveFailures, 0);
+            UpdateState(true);
+        }
+        else
+        {
+            var count = Interlocked.Increment(ref _consecutiveFailures);
+            _logger.LogDebug("ReportResult: failure #{Count}/{Threshold}", count, OfflineThreshold);
+            if (count >= OfflineThreshold)
+                UpdateState(false);
+        }
+    }
 
     public void Dispose()
     {

@@ -115,7 +115,16 @@ public sealed class SensorPalClient
 
     public async Task<LiveLevelDto?> GetLevelAsync()
     {
-        try { return await ExecuteAsync(() => _http.GetFromJsonAsync<LiveLevelDto>($"{BaseUrl}/monitoring/level")); }
+        try
+        {
+            // Short timeout: level is a high-frequency UI poll; a slow response must not
+            // freeze calibration for the full 10 s default HttpClient timeout.
+            // reportFailure=false: transient network blips must not trigger the disconnect dialog.
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            return await ExecuteAsync(
+                () => _http.GetFromJsonAsync<LiveLevelDto>($"{BaseUrl}/monitoring/level", cts.Token),
+                reportFailure: false);
+        }
         catch { return null; }
     }
 
@@ -186,7 +195,10 @@ public sealed class SensorPalClient
         await ExecuteAsync(() => _http.DeleteAsync($"{BaseUrl}/monitoring/{id}"));
     }
 
-    async Task<T> ExecuteAsync<T>(Func<Task<T>> call)
+    // reportFailure=false: success still restores connectivity (fast recovery after dialog),
+    // but failure does NOT drive the offline state. Use for high-frequency UI polls whose
+    // transient failures must not trigger the disconnect dialog.
+    async Task<T> ExecuteAsync<T>(Func<Task<T>> call, bool reportFailure = true)
     {
         try
         {
@@ -205,7 +217,8 @@ public sealed class SensorPalClient
         }
         catch (Exception ex)
         {
-            _connectivity.ReportResult(false);
+            if (reportFailure)
+                _connectivity.ReportResult(false);
             _logger.LogError("HTTP request failed: {Message}", ex.Message);
             throw;
         }

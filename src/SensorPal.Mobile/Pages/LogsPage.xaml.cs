@@ -51,6 +51,15 @@ public partial class LogsPage : ContentPage
         ShowCopyDialog(FormatEntry(entry));
     }
 
+    async void OnCopyAllClicked(object? sender, EventArgs e)
+    {
+        var entries = _store.Entries;
+        if (entries.Count == 0) return;
+
+        var text = string.Join('\n', entries.Select(FormatEntry));
+        await Clipboard.SetTextAsync(text);
+    }
+
     void OnClearClicked(object? sender, EventArgs e) => _store.Clear();
 
     async void OnCloseClicked(object? sender, EventArgs e)
