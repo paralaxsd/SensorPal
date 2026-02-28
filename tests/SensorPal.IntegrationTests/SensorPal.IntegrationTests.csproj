@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SensorPal.Server\SensorPal.Server.csproj" />
+    <ProjectReference Include="..\..\src\SensorPal.Shared\SensorPal.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

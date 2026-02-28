@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 using SensorPal.Server;
 using SensorPal.Server.Storage;
 using Xunit;
@@ -12,7 +13,8 @@ namespace SensorPal.IntegrationTests;
 
 /// <summary>
 /// Shared xunit fixture: spins up the SensorPal server with an in-memory SQLite
-/// database. One instance is created per test class that uses IClassFixture&lt;AppFixture&gt;.
+/// database and a deterministic FakeTimeProvider.
+/// One instance is created per test class that uses IClassFixture&lt;AppFixture&gt;.
 /// </summary>
 public sealed class AppFixture : IAsyncLifetime
 {
@@ -20,6 +22,7 @@ public sealed class AppFixture : IAsyncLifetime
     SqliteConnection? _keepAlive;
 
     public IAlbaHost Host { get; private set; } = null!;
+    public FakeTimeProvider Time { get; } = new();
 
     public async Task InitializeAsync()
     {
@@ -43,6 +46,9 @@ public sealed class AppFixture : IAsyncLifetime
                 services.RemoveAll<DbContextOptions<SensorPalDbContext>>();
                 services.AddDbContextFactory<SensorPalDbContext>(o =>
                     o.UseSqlite(_connStr));
+
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton<TimeProvider>(Time);
             });
         });
     }
