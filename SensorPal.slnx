@@ -26,6 +26,7 @@
   </Folder>
   <Folder Name="/02 tests/">
     <Project Path="tests/SensorPal.IntegrationTests/SensorPal.IntegrationTests.csproj" />
+    <Project Path="tests/SensorPal.Server.Tests/SensorPal.Server.Tests.csproj" />
   </Folder>
   <Folder Name="/03 build/">
     <Project Path="build/SensorPal.Build.csproj">
