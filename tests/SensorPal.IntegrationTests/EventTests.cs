@@ -108,6 +108,21 @@ public class EventTests(AppFixture app) : IClassFixture<AppFixture>, IAsyncLifet
     }
 
     [Fact]
+    public async Task GetEvent_ById_IncludesSessionId()
+    {
+        var sessionId = await SeedSessionAsync();
+        var eventId = await SeedEventAsync(sessionId, app.Time.GetUtcNow().UtcDateTime);
+
+        var result = await app.Host.Scenario(s =>
+        {
+            s.Get.Url($"/events/{eventId}");
+            s.StatusCodeShouldBeOk();
+        });
+
+        result.ReadAsJson<NoiseEventDto>()!.SessionId.ShouldBe(sessionId);
+    }
+
+    [Fact]
     public async Task GetEvent_WhenNotFound_ReturnsNotFound()
     {
         await app.Host.Scenario(s =>
@@ -163,6 +178,120 @@ public class EventTests(AppFixture app) : IClassFixture<AppFixture>, IAsyncLifet
         });
 
         result.ReadAsJson<DeletedDto>()!.Deleted.ShouldBe(0);
+    }
+
+    // ── DELETE /events/{id} ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task DeleteEvent_ById_ReturnsOkAndRemovesFromList()
+    {
+        var sessionId = await SeedSessionAsync();
+        var eventId = await SeedEventAsync(sessionId, app.Time.GetUtcNow().UtcDateTime);
+
+        await app.Host.Scenario(s =>
+        {
+            s.Delete.Url($"/events/{eventId}");
+            s.StatusCodeShouldBeOk();
+        });
+
+        (await GetEventsAsync()).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteEvent_WhenNotFound_ReturnsNotFound()
+    {
+        await app.Host.Scenario(s =>
+        {
+            s.Delete.Url("/events/999");
+            s.StatusCodeShouldBe(404);
+        });
+    }
+
+    [Fact]
+    public async Task DeleteEvent_ReturnsCorrectSessionId()
+    {
+        var sessionId = await SeedSessionAsync();
+        var eventId = await SeedEventAsync(sessionId, app.Time.GetUtcNow().UtcDateTime);
+
+        var result = await app.Host.Scenario(s =>
+        {
+            s.Delete.Url($"/events/{eventId}");
+            s.StatusCodeShouldBeOk();
+        });
+
+        result.ReadAsJson<DeleteEventResultDto>()!.SessionId.ShouldBe(sessionId);
+    }
+
+    [Fact]
+    public async Task DeleteEvent_LastInSession_ReportsSessionNowEmpty()
+    {
+        var sessionId = await SeedSessionAsync();
+        var eventId = await SeedEventAsync(sessionId, app.Time.GetUtcNow().UtcDateTime);
+
+        var result = await app.Host.Scenario(s =>
+        {
+            s.Delete.Url($"/events/{eventId}");
+            s.StatusCodeShouldBeOk();
+        });
+
+        result.ReadAsJson<DeleteEventResultDto>()!.SessionNowEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task DeleteEvent_NotLastInSession_ReportsSessionNotEmpty()
+    {
+        var sessionId = await SeedSessionAsync();
+        var t = app.Time.GetUtcNow().UtcDateTime;
+        var eventId = await SeedEventAsync(sessionId, t);
+        await SeedEventAsync(sessionId, t.AddHours(1));
+
+        var result = await app.Host.Scenario(s =>
+        {
+            s.Delete.Url($"/events/{eventId}");
+            s.StatusCodeShouldBeOk();
+        });
+
+        result.ReadAsJson<DeleteEventResultDto>()!.SessionNowEmpty.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteEvent_WhenBackgroundFileMissing_ReportsNoBackground()
+    {
+        // SeedSessionAsync uses "stub.mp3" which does not exist on disk
+        var sessionId = await SeedSessionAsync();
+        var eventId = await SeedEventAsync(sessionId, app.Time.GetUtcNow().UtcDateTime);
+
+        var result = await app.Host.Scenario(s =>
+        {
+            s.Delete.Url($"/events/{eventId}");
+            s.StatusCodeShouldBeOk();
+        });
+
+        result.ReadAsJson<DeleteEventResultDto>()!.SessionHasBackground.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteEvent_WhenBackgroundFileExists_ReportsHasBackground()
+    {
+        var bgFile = Path.Combine(Path.GetTempPath(), $"test_bg_{Guid.NewGuid():N}.mp3");
+        try
+        {
+            await File.WriteAllBytesAsync(bgFile, new byte[4]);
+            var sessionId = await SeedSessionWithBackgroundAsync(bgFile);
+            var eventId = await SeedEventAsync(sessionId, app.Time.GetUtcNow().UtcDateTime);
+
+            var result = await app.Host.Scenario(s =>
+            {
+                s.Delete.Url($"/events/{eventId}");
+                s.StatusCodeShouldBeOk();
+            });
+
+            result.ReadAsJson<DeleteEventResultDto>()!.SessionHasBackground.ShouldBeTrue();
+        }
+        finally
+        {
+            File.Delete(bgFile);
+        }
     }
 
     // ── GET /events/days ──────────────────────────────────────────────────────
@@ -225,6 +354,13 @@ public class EventTests(AppFixture app) : IClassFixture<AppFixture>, IAsyncLifet
         await using var scope = app.Host.Services.CreateAsyncScope();
         var sessions = scope.ServiceProvider.GetRequiredService<SessionRepository>();
         return await sessions.StartSessionAsync("stub.mp3");
+    }
+
+    async Task<long> SeedSessionWithBackgroundAsync(string backgroundFile)
+    {
+        await using var scope = app.Host.Services.CreateAsyncScope();
+        var sessions = scope.ServiceProvider.GetRequiredService<SessionRepository>();
+        return await sessions.StartSessionAsync(backgroundFile);
     }
 
     async Task<long> SeedEventAsync(long sessionId, DateTime detectedAt, double peakDb = -10.0)
