@@ -79,6 +79,7 @@ public sealed class AppFixture : IAsyncLifetime
                     new ControllableCaptureService(
                         sp.GetRequiredService<MonitoringStateService>(),
                         sp.GetRequiredService<SessionRepository>(),
+                        sp.GetRequiredService<EventRepository>(),
                         Time));
                 services.AddSingleton<IAudioCaptureService>(sp =>
                     sp.GetRequiredService<ControllableCaptureService>());

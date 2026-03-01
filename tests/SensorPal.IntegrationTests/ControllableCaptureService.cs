@@ -20,6 +20,7 @@ sealed class ControllableCaptureService : IAudioCaptureService, IHostedService
     static readonly WaveFormat Format = new WaveFormat(44100, 16, 1);
 
     readonly SessionRepository _sessions;
+    readonly EventRepository _events;
     readonly FakeTimeProvider _time;
     NoiseDetector? _detector;
 
@@ -38,9 +39,10 @@ sealed class ControllableCaptureService : IAudioCaptureService, IHostedService
     public int? ActiveSessionEventCount => _isMonitoring ? 0 : null;
 
     public ControllableCaptureService(
-        MonitoringStateService state, SessionRepository sessions, FakeTimeProvider time)
+        MonitoringStateService state, SessionRepository sessions, EventRepository events, FakeTimeProvider time)
     {
         _sessions = sessions;
+        _events = events;
         _time = time;
         state.StateChanged += OnStateChanged;
     }
@@ -56,6 +58,7 @@ sealed class ControllableCaptureService : IAudioCaptureService, IHostedService
         {
             case MonitoringState.Monitoring:
                 _detector = new NoiseDetector(-30.0, Format, _time);
+                _detector.EventEnded += OnEventEnded;
                 _sessionStartedAt = _time.GetUtcNow().UtcDateTime;
                 _currentSessionId = _sessions.StartSessionAsync("stub.mp3").GetAwaiter().GetResult();
                 _isMonitoring = true;
@@ -69,6 +72,8 @@ sealed class ControllableCaptureService : IAudioCaptureService, IHostedService
             case MonitoringState.Idle:
                 if (_isMonitoring)
                 {
+                    if (_detector is { })
+                        _detector.EventEnded -= OnEventEnded;
                     _isMonitoring = false;
                     _sessions.EndSessionAsync(_currentSessionId).GetAwaiter().GetResult();
                 }
@@ -77,6 +82,10 @@ sealed class ControllableCaptureService : IAudioCaptureService, IHostedService
                 break;
         }
     }
+
+    void OnEventEnded(DateTime startedAt, double peakDb, int durationMs) =>
+        _events.SaveEventAsync(_currentSessionId, startedAt, peakDb, durationMs, 0, 0, null)
+            .GetAwaiter().GetResult();
 
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
