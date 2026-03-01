@@ -21,7 +21,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 [GitHubActions(
     "tests", GitHubActionsImage.WindowsLatest,
     On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.WorkflowDispatch],
-    InvokedTargets = [nameof(Test)],
+    InvokedTargets = [nameof(Test)], PublishArtifacts = true,
     FetchDepth = 0)]
 sealed class Build : NukeBuild
 {
@@ -48,6 +48,7 @@ sealed class Build : NukeBuild
     AbsolutePath ServerProject => RootDirectory / "src" / "SensorPal.Server" / "SensorPal.Server.csproj";
     AbsolutePath ArtifactsDir => RootDirectory / "artifacts";
     AbsolutePath TestsDir => RootDirectory / "tests";
+    AbsolutePath CoverageDir => RootDirectory / "coverage";
 
     Target Clean => _ => _
         .Description("Remove all build outputs")
@@ -77,13 +78,18 @@ sealed class Build : NukeBuild
 
     Target Test => _ => _
         .Description("Build and run all test projects discovered under tests/")
+        .Produces(CoverageDir / "report")
         .Executes(() =>
         {
             var testProjects = TestsDir.GlobFiles("**/*Tests*.csproj");
             DotNetTest(s => s
                 .SetConfiguration(Configuration)
                 .AddLoggers("GitHubActions")
+                .SetResultsDirectory(CoverageDir)
+                .AddProcessAdditionalArguments("--collect:\"XPlat Code Coverage\"")
                 .CombineWith(testProjects, (s, p) => s.SetProjectFile(p)));
+
+            PublishCoverageReport();
         });
 
     Target PublishAndroid => _ => _
@@ -186,6 +192,26 @@ sealed class Build : NukeBuild
             Log.Warning("Could not find adb tool, skipping adb server kill. " +
                 "If you encounter deployment issues, ensure that adb is installed and ANDROID_HOME or ANDROID_SDK_ROOT environment variables are set.");
         }
+    }
+
+    void PublishCoverageReport()
+    {
+        var coberturaFiles = CoverageDir.GlobFiles("**/coverage.cobertura.xml");
+        if (coberturaFiles.Count == 0)
+        {
+            Log.Warning("No Cobertura coverage files found — skipping report generation.");
+            return;
+        }
+
+        DotNet("tool restore");
+
+        var reportDir = CoverageDir / "report";
+        var reports = string.Join(";", coberturaFiles.Select(f => f.ToString()));
+        DotNet($"tool run reportgenerator -- -reports:\"{reports}\" -targetdir:\"{reportDir}\" -reporttypes:MarkdownSummaryGithub;Html");
+
+        var summaryFile = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
+        if (summaryFile is { } && File.Exists(reportDir / "SummaryGithub.md"))
+            File.AppendAllText(summaryFile, "\n\n" + File.ReadAllText(reportDir / "SummaryGithub.md"));
     }
 
     static Tool? TryResolveAdbTool()
