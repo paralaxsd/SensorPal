@@ -26,6 +26,13 @@ public sealed class AppFixture : IAsyncLifetime
     public IAlbaHost Host { get; private set; } = null!;
     public FakeTimeProvider Time { get; } = new();
 
+    /// <summary>
+    /// The controllable capture stub. Exposes InjectAudio() for tests that
+    /// need to simulate audio input (e.g. calibration level checks).
+    /// </summary>
+    internal ControllableCaptureService Capture =>
+        Host.Services.GetRequiredService<ControllableCaptureService>();
+
     public async Task InitializeAsync()
     {
         // Keep one connection open so the named in-memory SQLite DB survives
@@ -68,9 +75,14 @@ public sealed class AppFixture : IAsyncLifetime
                 foreach (var d in factoryHosted)
                     services.Remove(d);
 
-                var nullCapture = new NullAudioCaptureService();
-                services.AddSingleton<IAudioCaptureService>(nullCapture);
-                services.AddSingleton<IHostedService>(nullCapture);
+                services.AddSingleton<ControllableCaptureService>(sp =>
+                    new ControllableCaptureService(
+                        sp.GetRequiredService<MonitoringStateService>(),
+                        Time));
+                services.AddSingleton<IAudioCaptureService>(sp =>
+                    sp.GetRequiredService<ControllableCaptureService>());
+                services.AddSingleton<IHostedService>(sp =>
+                    sp.GetRequiredService<ControllableCaptureService>());
             });
         });
     }
