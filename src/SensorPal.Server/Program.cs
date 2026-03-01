@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Serilog;
+using Serilog.Events;
 using SensorPal.Server.Configuration;
 using SensorPal.Server.Endpoints;
 using SensorPal.Server.Services;
@@ -31,6 +33,7 @@ static class Program
         var services = builder.Services;
         var configuration = builder.Configuration;
 
+        ConfigureLogging(builder);
         var rawStoragePath = ConfigureServices(services, configuration);
         AddServices(services, rawStoragePath);
     }
@@ -54,6 +57,23 @@ static class Program
         app.MapEndpoints();
         return app;
     }
+
+    static void ConfigureLogging(WebApplicationBuilder builder) =>
+        builder.Host.UseSerilog((_, config) => config
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .WriteTo.Logger(lc => lc
+                .Filter.ByIncludingOnly(e =>
+                    e.Properties.TryGetValue("SourceContext", out var sc) &&
+                    sc.ToString().Contains("SensorPal"))
+                .WriteTo.Console(
+                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
+            .WriteTo.File(
+                Path.Combine(AppContext.BaseDirectory, "logs", "sensorpal-.log"),
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 30,
+                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}"));
 
     static string ConfigureServices(IServiceCollection services, ConfigurationManager configuration)
     {

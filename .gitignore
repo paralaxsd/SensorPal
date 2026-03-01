@@ -6,3 +6,4 @@
 .nuke/temp/
 artifacts/
 coverage/
+logs/
