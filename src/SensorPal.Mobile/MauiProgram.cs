@@ -1,4 +1,6 @@
 using CommunityToolkit.Maui;
+using LiveChartsCore.SkiaSharpView.Maui;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -34,6 +36,8 @@ public static class MauiProgram
             .UseMauiCommunityToolkitMediaElement(isAndroidForegroundServiceEnabled: false)
 #endif
             .AddAudio()
+            .UseSkiaSharp()
+            .UseLiveCharts()
 #if !WINDOWS
             // Plugin.LocalNotification has no Windows target; on Windows we use
             // WinRT directly. Calling UseLocalNotification() on Windows resolves
@@ -134,5 +138,6 @@ public static class MauiProgram
         builder.Services.AddTransient<LogsPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<ConnectionPage>();
+        builder.Services.AddTransient<StatsPage>();
     }
 }

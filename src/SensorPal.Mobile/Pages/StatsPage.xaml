@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Maui;assembly=LiveChartsCore.SkiaSharpView.Maui"
+             x:Class="SensorPal.Mobile.Pages.StatsPage"
+             Title="Stats">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="12,8">
+
+        <!-- View switcher -->
+        <HorizontalStackLayout Grid.Row="0" Spacing="6" HorizontalOptions="Center">
+            <Button x:Name="BtnNightly" Text="Nightly"
+                    Clicked="OnNightlyClicked"
+                    FontSize="13" Padding="12,6" CornerRadius="6" />
+            <Button x:Name="BtnHourly" Text="Hourly"
+                    Clicked="OnHourlyClicked"
+                    FontSize="13" Padding="12,6" CornerRadius="6" />
+            <Button x:Name="BtnPeak" Text="Peak dB"
+                    Clicked="OnPeakClicked"
+                    FontSize="13" Padding="12,6" CornerRadius="6" />
+        </HorizontalStackLayout>
+
+        <!-- Range picker -->
+        <HorizontalStackLayout Grid.Row="1" Spacing="6"
+                                HorizontalOptions="Center" Margin="0,6,0,0">
+            <Button x:Name="Btn7d" Text="7 days"
+                    Clicked="On7dClicked"
+                    FontSize="13" Padding="12,6" CornerRadius="6" />
+            <Button x:Name="Btn30d" Text="30 days"
+                    Clicked="On30dClicked"
+                    FontSize="13" Padding="12,6" CornerRadius="6" />
+            <Button x:Name="Btn90d" Text="90 days"
+                    Clicked="On90dClicked"
+                    FontSize="13" Padding="12,6" CornerRadius="6" />
+        </HorizontalStackLayout>
+
+        <!-- Summary -->
+        <Label x:Name="SummaryLabel" Grid.Row="2"
+               HorizontalOptions="Center" Margin="0,8,0,4"
+               FontSize="13" TextColor="Gray" />
+
+        <!-- Chart area -->
+        <Grid Grid.Row="3">
+            <lvc:CartesianChart x:Name="Chart" IsVisible="False" />
+            <Label x:Name="NoDataLabel"
+                   Text="No events in this period"
+                   HorizontalOptions="Center" VerticalOptions="Center"
+                   TextColor="Gray" FontSize="15"
+                   IsVisible="False" />
+            <ActivityIndicator x:Name="LoadingIndicator"
+                               IsRunning="False" IsVisible="False"
+                               HorizontalOptions="Center" VerticalOptions="Center" />
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

@@ -101,6 +101,7 @@ static class Program
         services.AddSingleton<SessionRepository>();
         services.AddSingleton<EventRepository>();
         services.AddSingleton<SettingsRepository>();
+        services.AddSingleton<StatsRepository>();
 
         // Core services
         services.AddSingleton(TimeProvider.System);
@@ -180,5 +181,6 @@ static class Program
         app.MapAudioDeviceEndpoints();
         app.MapEventEndpoints();
         app.MapSettingsEndpoints();
+        app.MapStatsEndpoints();
     }
 }

@@ -67,3 +67,8 @@ sealed class EventMarkerDto
     public DateTimeOffset DetectedAt { get; init; }
     public double PeakDb { get; init; }
 }
+
+sealed record NightlyStatDto(DateOnly Date, int EventCount, double AvgDb, double PeakDb);
+sealed record HourlyStatDto(int Hour, int EventCount);
+sealed record StatsSummaryDto(int TotalEvents, int ActiveDays, double AvgPerNight, double PeakDb);
+sealed record StatsDto(List<NightlyStatDto> Nightly, List<HourlyStatDto> Hourly, StatsSummaryDto Summary);

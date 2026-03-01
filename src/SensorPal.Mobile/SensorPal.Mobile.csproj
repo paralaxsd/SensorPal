@@ -85,6 +85,7 @@
 		<PackageReference Include="CommunityToolkit.Maui.MediaElement" />
 		<PackageReference Include="Plugin.LocalNotification" />
 		<PackageReference Include="Plugin.Maui.Audio" />
+		<PackageReference Include="LiveChartsCore.SkiaSharpView.Maui" />
 	</ItemGroup>
 
 	<ItemGroup>

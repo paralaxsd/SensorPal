@@ -205,6 +205,11 @@ public sealed class SensorPalClient
         await ExecuteAsync(() => _http.DeleteAsync($"{BaseUrl}/monitoring/{id}"));
     }
 
+    public async Task<StatsDto?> GetStatsAsync(DateOnly from, DateOnly to)
+        => await ExecuteAsync(
+            () => _http.GetFromJsonAsync<StatsDto>(
+                $"{BaseUrl}/stats?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}"));
+
     // reportFailure=false: success still restores connectivity (fast recovery after dialog),
     // but failure does NOT drive the offline state. Use for high-frequency UI polls whose
     // transient failures must not trigger the disconnect dialog.

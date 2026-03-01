@@ -18,6 +18,9 @@
         <ShellContent Title="Events"
                       ContentTemplate="{DataTemplate pages:EventsPage}"
                       Route="EventsPage" />
+        <ShellContent Title="Stats"
+                      ContentTemplate="{DataTemplate pages:StatsPage}"
+                      Route="StatsPage" />
     </TabBar>
 
 </Shell>
