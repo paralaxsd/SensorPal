@@ -67,31 +67,11 @@ public partial class SessionsPage : ContentPage
         }
     }
 
-    async Task<bool> ConfirmDeleteSessionAsync(MonitoringSessionDto session)
+    Task<bool> ConfirmDeleteSessionAsync(MonitoringSessionDto session)
     {
         var date = session.StartedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm");
         var message = $"Delete session from {date} including all events and recordings?";
-#if ANDROID
-        var tcs = new TaskCompletionSource<bool>();
-        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
-        if (activity is null) return false;
-        activity.RunOnUiThread(() =>
-        {
-            var dialog = new Android.App.AlertDialog.Builder(activity)
-                .SetTitle("Delete Session")!
-                .SetMessage(message)!
-                .SetPositiveButton("Delete", (_, _) => tcs.TrySetResult(true))!
-                .SetNegativeButton("Cancel", (_, _) => tcs.TrySetResult(false))!
-                .Create()!;
-            dialog.Show();
-            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210);
-            dialog.GetButton(-1)?.SetTextColor(buttonColor);
-            dialog.GetButton(-2)?.SetTextColor(buttonColor);
-        });
-        return await tcs.Task;
-#else
-        return await DisplayAlertAsync("Delete Session", message, "Delete", "Cancel");
-#endif
+        return this.ConfirmAsync("Delete Session", message, "Delete", "Cancel");
     }
 
     async void OnCloseClicked(object? sender, EventArgs e)

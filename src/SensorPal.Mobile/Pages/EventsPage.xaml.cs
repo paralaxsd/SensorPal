@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Plugin.Maui.Audio;
+using SensorPal.Mobile.Extensions;
 using SensorPal.Mobile.Infrastructure;
 using SensorPal.Shared.Models;
 
@@ -325,60 +326,18 @@ public partial class EventsPage : ContentPage, IQueryAttributable
         await LoadEventsAsync();
     }
 
-    async Task<bool> ConfirmDeleteEventAsync(string time, bool isLastInSession)
+    Task<bool> ConfirmDeleteEventAsync(string time, bool isLastInSession)
     {
         var message = isLastInSession
             ? $"Clip von {time} löschen?\n\nAchtung: Dies ist der letzte Clip dieser Session. " +
               "Nach dem Löschen verbleiben keine Clips mehr — nur ggf. die Hintergrundaufnahme."
             : $"Clip von {time} löschen?";
         var title = isLastInSession ? "Letzter Clip der Session" : "Clip löschen";
-#if ANDROID
-        var tcs = new TaskCompletionSource<bool>();
-        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
-        if (activity is null) return false;
-        activity.RunOnUiThread(() =>
-        {
-            var dialog = new Android.App.AlertDialog.Builder(activity)
-                .SetTitle(title)!
-                .SetMessage(message)!
-                .SetPositiveButton("Löschen", (_, _) => tcs.TrySetResult(true))!
-                .SetNegativeButton("Abbrechen", (_, _) => tcs.TrySetResult(false))!
-                .Create()!;
-            dialog.Show();
-            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210);
-            dialog.GetButton(-1)?.SetTextColor(buttonColor);
-            dialog.GetButton(-2)?.SetTextColor(buttonColor);
-        });
-        return await tcs.Task;
-#else
-        return await DisplayAlertAsync(title, message, "Löschen", "Abbrechen");
-#endif
+        return this.ConfirmAsync(title, message, "Löschen", "Abbrechen");
     }
 
-    async Task<bool> ConfirmDeleteSessionAsync(string message)
-    {
-#if ANDROID
-        var tcs = new TaskCompletionSource<bool>();
-        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
-        if (activity is null) return false;
-        activity.RunOnUiThread(() =>
-        {
-            var dialog = new Android.App.AlertDialog.Builder(activity)
-                .SetTitle("Leere Session löschen?")!
-                .SetMessage(message)!
-                .SetPositiveButton("Session löschen", (_, _) => tcs.TrySetResult(true))!
-                .SetNegativeButton("Nein, behalten", (_, _) => tcs.TrySetResult(false))!
-                .Create()!;
-            dialog.Show();
-            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210);
-            dialog.GetButton(-1)?.SetTextColor(buttonColor);
-            dialog.GetButton(-2)?.SetTextColor(buttonColor);
-        });
-        return await tcs.Task;
-#else
-        return await DisplayAlertAsync("Leere Session löschen?", message, "Session löschen", "Nein, behalten");
-#endif
-    }
+    Task<bool> ConfirmDeleteSessionAsync(string message)
+        => this.ConfirmAsync("Leere Session löschen?", message, "Session löschen", "Nein, behalten");
 
     async void OnDeleteDayClicked(object? sender, EventArgs e)
     {
@@ -396,30 +355,10 @@ public partial class EventsPage : ContentPage, IQueryAttributable
         }
     }
 
-    async Task<bool> ConfirmDeleteDayAsync()
+    Task<bool> ConfirmDeleteDayAsync()
     {
         var message = $"Delete all events and clips for {_selectedDate:dd.MM.yyyy}?";
-#if ANDROID
-        var tcs = new TaskCompletionSource<bool>();
-        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
-        if (activity is null) return false;
-        activity.RunOnUiThread(() =>
-        {
-            var dialog = new Android.App.AlertDialog.Builder(activity)
-                .SetTitle("Delete Day")!
-                .SetMessage(message)!
-                .SetPositiveButton("Delete", (_, _) => tcs.TrySetResult(true))!
-                .SetNegativeButton("Cancel", (_, _) => tcs.TrySetResult(false))!
-                .Create()!;
-            dialog.Show();
-            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210);
-            dialog.GetButton(-1)?.SetTextColor(buttonColor);
-            dialog.GetButton(-2)?.SetTextColor(buttonColor);
-        });
-        return await tcs.Task;
-#else
-        return await DisplayAlertAsync("Delete Day", message, "Delete", "Cancel");
-#endif
+        return this.ConfirmAsync("Delete Day", message, "Delete", "Cancel");
     }
 
     async Task LoadEventsAsync()
