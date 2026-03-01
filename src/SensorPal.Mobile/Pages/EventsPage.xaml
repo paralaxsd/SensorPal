@@ -72,13 +72,22 @@
                             <Label Grid.Row="1" Grid.Column="0"
                                    Text="{Binding ClipDurationMs, Converter={StaticResource Duration}, StringFormat='Clip: {0}'}"
                                    TextColor="Gray" FontSize="13" />
-                            <Button Grid.Row="1" Grid.Column="1"
-                                    Text="{Binding ButtonText}"
-                                    FontSize="13"
-                                    IsVisible="{Binding HasClip}"
-                                    IsEnabled="{Binding CanInteract}"
-                                    Clicked="OnPlayClicked"
-                                    CommandParameter="{Binding Id}" />
+                            <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
+                                <Button Text="{Binding ButtonText}"
+                                        FontSize="13"
+                                        IsVisible="{Binding HasClip}"
+                                        IsEnabled="{Binding CanInteract}"
+                                        Clicked="OnPlayClicked"
+                                        CommandParameter="{Binding Id}" />
+                                <Button Text="🗑"
+                                        FontSize="13"
+                                        IsEnabled="{Binding CanInteract}"
+                                        BackgroundColor="Transparent"
+                                        TextColor="OrangeRed"
+                                        Padding="8,0"
+                                        Clicked="OnDeleteEventClicked"
+                                        CommandParameter="{Binding Id}" />
+                            </HorizontalStackLayout>
                         </Grid>
                     </Border>
                 </DataTemplate>

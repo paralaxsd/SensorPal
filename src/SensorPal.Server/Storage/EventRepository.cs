@@ -74,6 +74,32 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
             .OrderBy(d => d)];
     }
 
+    public async Task<(bool Found, long SessionId, bool SessionNowEmpty, bool SessionHasBackground)>
+        DeleteEventAsync(long id)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var ev = await db.NoiseEvents
+            .Include(e => e.Session)
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (ev is null) return (false, 0, false, false);
+
+        var sessionId = ev.SessionId;
+        var clipFile = ev.ClipFile;
+        var hasBackground = ev.Session.BackgroundFile is not null &&
+            File.Exists(ev.Session.BackgroundFile);
+
+        db.NoiseEvents.Remove(ev);
+        await db.SaveChangesAsync();
+
+        if (clipFile is not null && File.Exists(clipFile))
+            File.Delete(clipFile);
+
+        var remaining = await db.NoiseEvents.CountAsync(e => e.SessionId == sessionId);
+
+        return (true, sessionId, remaining == 0, hasBackground);
+    }
+
     public async Task<int> DeleteEventsByDateAsync(DateOnly date)
     {
         await using var db = await factory.CreateDbContextAsync();

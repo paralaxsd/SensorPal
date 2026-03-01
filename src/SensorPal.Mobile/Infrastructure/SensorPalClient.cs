@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SensorPal.Shared.Extensions;
@@ -47,7 +48,10 @@ public sealed class SensorPalClient
         _connectivity = connectivity;
         _logger = logger;
         _configuredBaseUrl = config.Value.BaseUrl;
-        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        _http = new HttpClient
+        {
+            Timeout = Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(10)
+        };
 
         var baseUrl = BaseUrl;
         _logger.LogInformation("SensorPalClient ready — base URL: {Url} (source: {Source})",
@@ -183,6 +187,12 @@ public sealed class SensorPalClient
     public async Task SaveSettingsAsync(SettingsDto dto)
     {
         await ExecuteAsync(() => _http.PutAsJsonAsync($"{BaseUrl}/settings", dto));
+    }
+
+    public async Task<DeleteEventResultDto?> DeleteEventAsync(long id)
+    {
+        var response = await ExecuteAsync(() => _http.DeleteAsync($"{BaseUrl}/events/{id}"));
+        return await response.Content.ReadFromJsonAsync<DeleteEventResultDto>();
     }
 
     public async Task DeleteEventsByDateAsync(DateOnly date)

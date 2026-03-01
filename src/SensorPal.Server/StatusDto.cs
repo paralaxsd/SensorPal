@@ -11,6 +11,7 @@ sealed class StatusDto
 sealed class NoiseEventDto
 {
     public long Id { get; init; }
+    public long SessionId { get; init; }
     public DateTimeOffset DetectedAt { get; init; }
     public double PeakDb { get; init; }
     public int DurationMs { get; init; }
@@ -57,6 +58,8 @@ sealed record SettingsDto(
     int PreRollSeconds,
     int PostRollSeconds,
     int BackgroundBitrate);
+
+sealed record DeleteEventResultDto(long SessionId, bool SessionNowEmpty, bool SessionHasBackground);
 
 sealed class EventMarkerDto
 {

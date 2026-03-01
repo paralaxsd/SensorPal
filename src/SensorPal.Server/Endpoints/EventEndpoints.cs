@@ -49,6 +49,24 @@ static class EventEndpoints
         .WithDescription("Streams the short WAV audio clip recorded around the noise event, " +
             "including pre-roll and post-roll silence. Returns 404 if the clip file is missing.");
 
+        group.MapDelete("/{id:long}", async (long id, EventRepository repo, ILogger<Log> logger) =>
+        {
+            var (found, sessionId, sessionNowEmpty, sessionHasBackground) =
+                await repo.DeleteEventAsync(id);
+
+            if (!found) return Results.NotFound();
+
+            logger.LogInformation(
+                "Deleted event {Id} (session {SessionId}, session now empty: {Empty})",
+                id, sessionId, sessionNowEmpty);
+
+            return Results.Ok(new DeleteEventResultDto(sessionId, sessionNowEmpty, sessionHasBackground));
+        })
+        .WithSummary("Delete a single noise event")
+        .WithDescription("Deletes one noise event record and its associated WAV clip file. " +
+            "Returns 404 if not found. SessionNowEmpty=true indicates the owning session has no " +
+            "remaining clips; SessionHasBackground indicates a background MP3 still exists.");
+
         group.MapDelete("/", async (string? date, EventRepository repo, TimeProvider time, ILogger<Log> logger) =>
         {
             var day = date is not null
@@ -68,6 +86,7 @@ static class EventEndpoints
     static NoiseEventDto ToDto(NoiseEvent e) => new()
     {
         Id = e.Id,
+        SessionId = e.SessionId,
         DetectedAt = new DateTimeOffset(e.DetectedAt, TimeSpan.Zero),
         PeakDb = e.PeakDb,
         DurationMs = e.DurationMs,

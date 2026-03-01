@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Plugin.Maui.Audio;
 using SensorPal.Mobile.Infrastructure;
+using SensorPal.Shared.Models;
 
 namespace SensorPal.Mobile.Pages;
 
@@ -267,6 +268,116 @@ public partial class EventsPage : ContentPage, IQueryAttributable
         return t.TotalMinutes >= 1
             ? $"{(int)t.TotalMinutes}:{t.Seconds:D2}"
             : $"0:{t.Seconds:D2}";
+    }
+
+    async void OnDeleteEventClicked(object? sender, EventArgs e)
+    {
+        if (sender is not Button btn || btn.CommandParameter is not long id) return;
+
+        var rows = (EventsView.ItemsSource as IEnumerable<EventRowVm>)?.ToList();
+        var vm = rows?.FirstOrDefault(r => r.Id == id);
+        if (vm is null) return;
+
+        // Stop playback first if this clip is currently playing
+        if (_currentVm == vm)
+            StopPlayback();
+
+        // Check upfront if this is the last visible clip in the session so the user
+        // can back out before anything is actually deleted.
+        var isLastInSession = rows?.Count(r => r.SessionId == vm.SessionId) == 1;
+        var time = vm.DetectedAt.ToLocalTime().ToString("HH:mm:ss");
+        if (!await ConfirmDeleteEventAsync(time, isLastInSession)) return;
+
+        vm.IsDeleting = true;
+        try
+        {
+            var result = await _client.DeleteEventAsync(id);
+
+            if (result?.SessionNowEmpty == true)
+                await HandleSessionNowEmptyAsync(result);
+            else
+                await LoadEventsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete event {Id}", id);
+            vm.IsDeleting = false;
+        }
+    }
+
+    async Task HandleSessionNowEmptyAsync(DeleteEventResultDto result)
+    {
+        var message = result.SessionHasBackground
+            ? "Das war der letzte Clip dieser Session. Die Hintergrundaufnahme (Background-MP3) " +
+              "bleibt erhalten.\n\nSoll die gesamte Session inkl. Hintergrundaufnahme ebenfalls " +
+              "gelöscht werden?"
+            : "Das war der letzte Clip dieser Session. Soll die leere Session ebenfalls gelöscht werden?";
+
+        if (await ConfirmDeleteSessionAsync(message))
+        {
+            try { await _client.DeleteSessionAsync(result.SessionId); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete empty session {Id}", result.SessionId);
+            }
+        }
+
+        await LoadEventsAsync();
+    }
+
+    async Task<bool> ConfirmDeleteEventAsync(string time, bool isLastInSession)
+    {
+        var message = isLastInSession
+            ? $"Clip von {time} löschen?\n\nAchtung: Dies ist der letzte Clip dieser Session. " +
+              "Nach dem Löschen verbleiben keine Clips mehr — nur ggf. die Hintergrundaufnahme."
+            : $"Clip von {time} löschen?";
+        var title = isLastInSession ? "Letzter Clip der Session" : "Clip löschen";
+#if ANDROID
+        var tcs = new TaskCompletionSource<bool>();
+        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+        if (activity is null) return false;
+        activity.RunOnUiThread(() =>
+        {
+            var dialog = new Android.App.AlertDialog.Builder(activity)
+                .SetTitle(title)!
+                .SetMessage(message)!
+                .SetPositiveButton("Löschen", (_, _) => tcs.TrySetResult(true))!
+                .SetNegativeButton("Abbrechen", (_, _) => tcs.TrySetResult(false))!
+                .Create()!;
+            dialog.Show();
+            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210);
+            dialog.GetButton(-1)?.SetTextColor(buttonColor);
+            dialog.GetButton(-2)?.SetTextColor(buttonColor);
+        });
+        return await tcs.Task;
+#else
+        return await DisplayAlertAsync(title, message, "Löschen", "Abbrechen");
+#endif
+    }
+
+    async Task<bool> ConfirmDeleteSessionAsync(string message)
+    {
+#if ANDROID
+        var tcs = new TaskCompletionSource<bool>();
+        var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+        if (activity is null) return false;
+        activity.RunOnUiThread(() =>
+        {
+            var dialog = new Android.App.AlertDialog.Builder(activity)
+                .SetTitle("Leere Session löschen?")!
+                .SetMessage(message)!
+                .SetPositiveButton("Session löschen", (_, _) => tcs.TrySetResult(true))!
+                .SetNegativeButton("Nein, behalten", (_, _) => tcs.TrySetResult(false))!
+                .Create()!;
+            dialog.Show();
+            var buttonColor = Android.Graphics.Color.Rgb(25, 118, 210);
+            dialog.GetButton(-1)?.SetTextColor(buttonColor);
+            dialog.GetButton(-2)?.SetTextColor(buttonColor);
+        });
+        return await tcs.Task;
+#else
+        return await DisplayAlertAsync("Leere Session löschen?", message, "Session löschen", "Nein, behalten");
+#endif
     }
 
     async void OnDeleteDayClicked(object? sender, EventArgs e)
