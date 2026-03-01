@@ -19,7 +19,7 @@ Night-time noise monitoring for Windows + Android. Captures audio from a USB aud
 
 If your audio interface is already the **Windows default input device**, you can skip this step — the server will use it automatically.
 
-Otherwise, find the exact device name: run the server, open `http://localhost:5000/scalar/v1` → `GET /audio/devices`, note the `name` of your input.
+Otherwise, find the exact device name: run the server, open `http://localhost:50194/scalar/v1` → `GET /audio/devices`, note the `name` of your input.
 
 Store it as a user secret (never committed to git):
 
@@ -41,7 +41,7 @@ Recommended format: **1 channel, 16-bit or 32-bit, 48000 Hz**. The server auto-d
 dotnet run --project src/SensorPal.Server
 ```
 
-The server starts on `http://localhost:5000`. The SQLite database and recordings are created in `src/SensorPal.Server/recordings/` by default.
+The server starts on `http://localhost:50194`. The SQLite database and recordings are created in `src/SensorPal.Server/recordings/` by default.
 
 ### 4. Note the API key
 
@@ -66,17 +66,17 @@ All API calls include this key as `Authorization: Bearer <key>`. The `/status` e
 
 ### 2. Set the server address
 
-Edit `src/SensorPal.Mobile/appsettings.Android.json`:
+Edit `src/SensorPal.Mobile/appsettings.Android.json` and replace `192.168.1.X` with your PC's LAN IP (`ipconfig` → IPv4 Address):
 
 ```json
 {
   "ServerConfig": {
-    "BaseUrl": "http://192.168.1.X:5000"
+    "BaseUrl": "http://192.168.1.X:50194"
   }
 }
 ```
 
-Replace `192.168.1.X` with your PC's LAN IP (`ipconfig` → IPv4 Address).
+Alternatively, skip this step and set the server URL at runtime in the app under **Settings → Server URL**.
 
 ### 3. Deploy to device
 
@@ -146,13 +146,13 @@ All settings live in `src/SensorPal.Server/appsettings.json` or as user secrets.
 | `AudioConfig:BackgroundBitrate` | `64` | Background MP3 bitrate (kbps) |
 | `AudioConfig:ClipBitrate` | `128` | Event clip MP3 bitrate (kbps) |
 | `AudioConfig:StoragePath` | `recordings` | Where recordings and the SQLite DB are stored |
-| `ServerConfig:BaseUrl` | `http://localhost:5000` | Used by the mobile app to reach the server |
+| `ServerConfig:BaseUrl` | `http://localhost:50194` | Used by the mobile app to reach the server |
 
 ---
 
 ## API (Development)
 
-Interactive API docs at `http://localhost:5000/scalar/v1` when running in Development mode.
+Interactive API docs at `http://localhost:50194/scalar/v1` when running in Development mode.
 
 Notable endpoints:
 
@@ -165,3 +165,54 @@ Notable endpoints:
 | `GET /monitoring/sessions` | List all sessions |
 | `GET /events?date=YYYY-MM-DD` | Events for a given date |
 | `GET /events/{id}/audio` | Download the WAV clip for an event |
+
+---
+
+## Building & Development
+
+The solution uses [Nuke](https://nuke.build) as its build automation tool. No global installation required — the bootstrapper scripts in the repo root handle everything.
+
+### Targets
+
+| Target | Description |
+|---|---|
+| `Compile` *(default)* | Restore packages and build the entire solution |
+| `Clean` | Remove all build outputs |
+| `Test` | Build and run all test projects |
+| `PublishAndroid` | Build a Release Android APK → `artifacts/android/` |
+| `PublishServer` | Publish a self-contained server build → `artifacts/server/` |
+| `DeployAndroid` | Build and install the Android app on a connected device via ADB |
+| `ListAndroidDevices` | List all Android devices currently visible to ADB |
+
+### PowerShell (Windows)
+
+```powershell
+.\build.ps1                                          # Compile (default)
+.\build.ps1 Clean
+.\build.ps1 Test
+.\build.ps1 PublishServer
+.\build.ps1 PublishAndroid
+.\build.ps1 DeployAndroid                            # Deploy Debug to default device
+.\build.ps1 DeployAndroid --configuration Release    # Release build
+.\build.ps1 DeployAndroid --aot                      # AOT compilation
+.\build.ps1 DeployAndroid --device-id emulator-5554  # Target a specific device
+.\build.ps1 ListAndroidDevices                       # Show connected devices
+```
+
+### Bash (Linux / macOS / Git Bash)
+
+```bash
+./build.sh          # Compile
+./build.sh Test
+./build.sh PublishServer
+```
+
+### Plain dotnet
+
+You can also work without Nuke for the server and tests:
+
+```bash
+dotnet build SensorPal.slnx
+dotnet test SensorPal.slnx
+dotnet run --project src/SensorPal.Server
+```
