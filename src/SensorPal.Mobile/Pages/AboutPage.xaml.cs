@@ -11,7 +11,11 @@ public partial class AboutPage : ContentPage
         CommitLabel.Text = $"{ThisAssembly.GitCommitIdShort} on {ThisAssembly.GitBranch}";
         BuiltLabel.Text = ThisAssembly.GitCommitDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
         RepoLinkLabel.Text = ThisAssembly.RepositoryUrl;
+#if WINDOWS
+        RuntimeLabel.IsVisible = false;
+#else
         RuntimeLabel.Text = RuntimeFeature.IsDynamicCodeCompiled ? "AOT" : "Interpreter";
+#endif
     }
 
     async void OnCloseClicked(object? sender, EventArgs e)
