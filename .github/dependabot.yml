@@ -1,0 +1,7 @@
+# Also see: https://devblogs.microsoft.com/dotnet/using-dependabot-to-manage-dotnet-sdk-updates/#configuring-dependabot-for-.net-sdk-updates
+version: 2
+updates:
+  - package-ecosystem: "dotnet-sdk"
+    directory: "/"
+    schedule:
+      interval: "weekly"
