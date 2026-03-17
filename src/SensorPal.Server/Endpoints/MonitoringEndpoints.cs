@@ -58,11 +58,16 @@ static class MonitoringEndpoints
                 return Results.NotFound();
             }
 
-            var exists = File.Exists(path);
-            logger.LogInformation("Audio request: session {SessionId} → file={Path} exists={Exists}",
-                id, path, exists);
+            if (!File.Exists(path))
+            {
+                logger.LogWarning("Audio request: session {SessionId} → file not found on disk: {Path}",
+                    id, path);
+                return Results.NotFound();
+            }
 
-            if (!exists) return Results.NotFound();
+            var fileSizeBytes = new FileInfo(path).Length;
+            logger.LogInformation("Audio request: session {SessionId} → streaming {Bytes:N0} bytes from {Path}",
+                id, fileSizeBytes, path);
             return Results.File(path, "audio/mpeg", enableRangeProcessing: true);
         })
         .WithSummary("Stream background MP3 for a session")

@@ -37,12 +37,32 @@ static class EventEndpoints
         .WithSummary("Get a single noise event")
         .WithDescription("Returns metadata for one noise event by its database ID.");
 
-        group.MapGet("/{id:long}/audio", async (long id, EventRepository repo) =>
+        group.MapGet("/{id:long}/audio", async (long id, EventRepository repo, ILogger<Log> logger) =>
         {
             var ev = await repo.GetEventAsync(id);
-            if (ev?.ClipFile is null || !File.Exists(ev.ClipFile))
-                return Results.NotFound();
 
+            if (ev is null)
+            {
+                logger.LogWarning("Clip download: event {EventId} not found in DB", id);
+                return Results.NotFound();
+            }
+
+            if (ev.ClipFile is null)
+            {
+                logger.LogWarning("Clip download: event {EventId} has no clip file", id);
+                return Results.NotFound();
+            }
+
+            if (!File.Exists(ev.ClipFile))
+            {
+                logger.LogWarning("Clip download: event {EventId} → clip file not found on disk: {Path}",
+                    id, ev.ClipFile);
+                return Results.NotFound();
+            }
+
+            var fileSizeBytes = new FileInfo(ev.ClipFile).Length;
+            logger.LogInformation("Clip download: event {EventId} → streaming {Bytes:N0} bytes from {Path}",
+                id, fileSizeBytes, ev.ClipFile);
             var stream = File.OpenRead(ev.ClipFile);
             return Results.File(stream, "audio/wav", Path.GetFileName(ev.ClipFile));
         })
