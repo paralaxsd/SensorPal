@@ -32,7 +32,8 @@
             <Button Grid.Column="2" Text="🗑" VerticalOptions="Center"
                     HeightRequest="44" Padding="0"
                     BackgroundColor="Transparent" TextColor="OrangeRed"
-                    FontSize="18" Clicked="OnDeleteDayClicked" />
+                    FontSize="18" Clicked="OnDeleteDayClicked"
+                    x:Name="DeleteDayButton" />
         </Grid>
 
         <!-- Skip-empty-days toggle -->

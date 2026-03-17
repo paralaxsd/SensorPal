@@ -1,4 +1,5 @@
 using SensorPal.Server.Entities;
+using SensorPal.Server.Services;
 using SensorPal.Server.Storage;
 
 namespace SensorPal.Server.Endpoints;
@@ -67,20 +68,30 @@ static class EventEndpoints
             "Returns 404 if not found. SessionNowEmpty=true indicates the owning session has no " +
             "remaining clips; SessionHasBackground indicates a background MP3 still exists.");
 
-        group.MapDelete("/", async (string? date, EventRepository repo, TimeProvider time, ILogger<Log> logger) =>
+        group.MapDelete("/", async (string? date, EventRepository repo, TimeProvider time,
+            IAudioCaptureService capture, ILogger<Log> logger) =>
         {
             var day = date is not null
                 ? DateOnly.Parse(date)
                 : DateOnly.FromDateTime(time.GetLocalNow().DateTime);
 
-            var count = await repo.DeleteEventsByDateAsync(day);
-            logger.LogInformation("Deleted {Count} event(s) for {Date}", count, day);
+            var result = await repo.DeleteEventsByDateAsync(day, capture.ActiveSessionId);
 
-            return Results.Ok(new { Deleted = count });
+            logger.LogInformation(
+                "Deleted {EventCount} event(s) for {Date}; {SessionCount} session(s) also deleted; " +
+                "{Skipped} session(s) skipped (active or spanning multiple days)",
+                result.EventCount, day, result.DeletedSessionIds.Count, result.SkippedActiveSessions);
+
+            if (result.DeletedSessionIds.Count > 0)
+                logger.LogInformation("Sessions deleted: {SessionIds}",
+                    string.Join(", ", result.DeletedSessionIds));
+
+            return Results.Ok(new { Deleted = result.EventCount, DeletedSessions = result.DeletedSessionIds.Count });
         })
         .WithSummary("Delete all events for a date")
-        .WithDescription("Deletes noise event records and their associated WAV clip files for the given date. " +
-            "Defaults to today. Returns the number of deleted records.");
+        .WithDescription("Deletes noise event records, WAV clip files, and any sessions that lie " +
+            "fully within the day and are now empty. Active sessions and multi-day sessions are skipped. " +
+            "Defaults to today.");
     }
 
     static NoiseEventDto ToDto(NoiseEvent e) => new()

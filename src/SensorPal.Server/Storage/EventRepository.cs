@@ -100,7 +100,7 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
         return (true, sessionId, remaining == 0, hasBackground);
     }
 
-    public async Task<int> DeleteEventsByDateAsync(DateOnly date)
+    public async Task<DeleteByDateResult> DeleteEventsByDateAsync(DateOnly date, long? activeSessionId = null)
     {
         await using var db = await factory.CreateDbContextAsync();
         var (start, end) = GetDayRange(date);
@@ -110,17 +110,51 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
             .Select(e => e.ClipFile!)
             .ToListAsync();
 
-        var count = await db.NoiseEvents
+        var eventCount = await db.NoiseEvents
             .Where(e => e.DetectedAt >= start && e.DetectedAt <= end)
             .ExecuteDeleteAsync();
 
         foreach (var file in clipFiles.Where(File.Exists))
             File.Delete(file);
 
-        return count;
+        // Delete sessions that lie fully within the day, are now empty, and are not active.
+        // Sessions that span multiple days are left intact (their events on other days remain).
+        var candidateSessions = await db.MonitoringSessions
+            .Include(s => s.Events)
+            .Where(s => s.EndedAt != null && s.StartedAt >= start && s.EndedAt <= end)
+            .ToListAsync();
+
+        var sessionsToDelete = candidateSessions
+            .Where(s => !s.Events.Any() && s.Id != activeSessionId)
+            .ToList();
+
+        var skippedActive = candidateSessions.Count - sessionsToDelete.Count;
+
+        var backgroundFiles = sessionsToDelete
+            .Where(s => s.BackgroundFile is { })
+            .Select(s => s.BackgroundFile!)
+            .ToList();
+
+        foreach (var session in sessionsToDelete)
+            db.MonitoringSessions.Remove(session);
+
+        await db.SaveChangesAsync();
+
+        foreach (var file in backgroundFiles.Where(File.Exists))
+            File.Delete(file);
+
+        return new DeleteByDateResult(
+            eventCount,
+            sessionsToDelete.Select(s => s.Id).ToList(),
+            skippedActive);
     }
 
     static (DateTime Start, DateTime End) GetDayRange(DateOnly date) => (
         date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local).ToUniversalTime(),
         date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Local).ToUniversalTime());
 }
+
+sealed record DeleteByDateResult(
+    int EventCount,
+    IReadOnlyList<long> DeletedSessionIds,
+    int SkippedActiveSessions);

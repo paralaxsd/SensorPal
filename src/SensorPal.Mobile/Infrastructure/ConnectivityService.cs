@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SensorPal.Shared.Extensions;
@@ -25,6 +26,7 @@ public sealed class ConnectivityService(
      * PROPERTIES
      * ***************************************************************************************/
     public bool IsServerReachable { get; private set; } = true;
+    public bool IsMonitoring { get; private set; }
 
     string BaseUrl
     {
@@ -62,6 +64,16 @@ public sealed class ConnectivityService(
             reachable = response.IsSuccessStatusCode;
             _logger.LogDebug("Ping result: {StatusCode} → reachable={Reachable}",
                 (int)response.StatusCode, reachable);
+
+            if (reachable)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("mode", out var mode) ||
+                    root.TryGetProperty("Mode", out mode))
+                    IsMonitoring = mode.GetString() == "Monitoring";
+            }
         }
         catch (Exception ex)
         {

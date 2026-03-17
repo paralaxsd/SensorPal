@@ -59,6 +59,7 @@ public partial class EventsPage : ContentPage, IQueryAttributable
         base.OnAppearing();
         _hasAppeared = true;
         _connectivity.ConnectivityChanged += OnConnectivityChanged;
+        UpdateDeleteDayButton();
 
         if (SkipEmptyDaysSwitch.IsToggled)
             _ = RefreshActiveDaysAsync();
@@ -102,6 +103,7 @@ public partial class EventsPage : ContentPage, IQueryAttributable
     void OnDateSelected(object? sender, DateChangedEventArgs e)
     {
         _selectedDate = DateOnly.FromDateTime(e.NewDate ?? DateTime.Today);
+        UpdateDeleteDayButton();
         _ = LoadEventsAsync();
     }
 
@@ -338,6 +340,15 @@ public partial class EventsPage : ContentPage, IQueryAttributable
 
     Task<bool> ConfirmDeleteSessionAsync(string message)
         => this.ConfirmAsync("Leere Session löschen?", message, "Session löschen", "Nein, behalten");
+
+    void UpdateDeleteDayButton()
+    {
+        var blockedByMonitoring =
+            _selectedDate == DateOnly.FromDateTime(DateTime.Today) && _connectivity.IsMonitoring;
+
+        DeleteDayButton.IsEnabled = !blockedByMonitoring;
+        DeleteDayButton.Opacity = blockedByMonitoring ? 0.35 : 1.0;
+    }
 
     async void OnDeleteDayClicked(object? sender, EventArgs e)
     {
