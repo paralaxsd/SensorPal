@@ -55,25 +55,17 @@
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="16,8">
-            <Label Grid.Column="0"
-                   Text="Tap entry to copy"
-                   TextColor="Gray"
-                   FontSize="11"
-                   VerticalOptions="Center" />
-            <Button Grid.Column="2"
-                    Text="Copy All"
-                    HorizontalOptions="End"
+        <HorizontalStackLayout Grid.Row="1"
+                               HorizontalOptions="End"
+                               Spacing="8"
+                               Margin="16,8">
+            <Button Text="Copy All"
                     Clicked="OnCopyAllClicked" />
-            <Button Grid.Column="3"
-                    Text="Clear"
-                    Margin="8,0,0,0"
+            <Button Text="Clear"
                     Clicked="OnClearClicked" />
-            <Button Grid.Column="4"
-                    Text="Close"
-                    Margin="8,0,0,0"
+            <Button Text="Close"
                     Clicked="OnCloseClicked" />
-        </Grid>
+        </HorizontalStackLayout>
 
     </Grid>
 
