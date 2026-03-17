@@ -110,6 +110,7 @@ static class Program
         // IHostedService reuses the same instance via cast — no double-dispose.
         services.AddSingleton<IAudioCaptureService, AudioCaptureService>();
         services.AddHostedService(sp => (AudioCaptureService)sp.GetRequiredService<IAudioCaptureService>());
+        services.AddHostedService<AutoStopService>();
     }
 
     static async Task EnsureAndMigrateDbAsync(WebApplication app)

@@ -57,6 +57,7 @@ sealed class SettingsRepository(
             existing.PreRollSeconds = settings.PreRollSeconds;
             existing.PostRollSeconds = settings.PostRollSeconds;
             existing.BackgroundBitrate = settings.BackgroundBitrate;
+            existing.AutoStopTime = settings.AutoStopTime;
             // ApiKey is intentionally NOT updated here — use a dedicated endpoint or DB tool.
             settings.ApiKey = existing.ApiKey;
         }
@@ -65,8 +66,10 @@ sealed class SettingsRepository(
         _cache = settings;
 
         logger.LogInformation(
-            "Settings updated: Threshold={Threshold:F1} dBFS, PreRoll={Pre}s, PostRoll={Post}s, Bitrate={Bitrate} kbps",
-            settings.NoiseThresholdDb, settings.PreRollSeconds, settings.PostRollSeconds, settings.BackgroundBitrate);
+            "Settings updated: Threshold={Threshold:F1} dBFS, PreRoll={Pre}s, PostRoll={Post}s, " +
+            "Bitrate={Bitrate} kbps, AutoStopTime={AutoStop}",
+            settings.NoiseThresholdDb, settings.PreRollSeconds, settings.PostRollSeconds,
+            settings.BackgroundBitrate, settings.AutoStopTime ?? "disabled");
     }
 
     async Task GenerateAndSaveApiKeyAsync(SensorPalDbContext db, AppSettings settings)

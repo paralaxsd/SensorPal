@@ -21,4 +21,10 @@ sealed class AudioConfig
     /// Relative paths are resolved from the server executable directory.
     /// </summary>
     public string StoragePath { get; init; } = "recordings";
+
+    /// <summary>
+    /// Local time at which monitoring is automatically stopped each day.
+    /// Null disables the feature.
+    /// </summary>
+    public TimeOnly? AutoStopTime { get; init; }
 }

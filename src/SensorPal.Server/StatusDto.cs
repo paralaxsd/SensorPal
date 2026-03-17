@@ -6,6 +6,11 @@ sealed class StatusDto
     public DateTimeOffset StartedAt { get; init; }
     public DateTimeOffset Now { get; init; }
     public string Mode { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Auto-stop time in "HH:mm" format, or null if not configured.
+    /// </summary>
+    public string? AutoStopTime { get; init; }
 }
 
 sealed class NoiseEventDto
@@ -57,7 +62,8 @@ sealed record SettingsDto(
     double NoiseThresholdDb,
     int PreRollSeconds,
     int PostRollSeconds,
-    int BackgroundBitrate);
+    int BackgroundBitrate,
+    string? AutoStopTime = null);
 
 sealed record DeleteEventResultDto(long SessionId, bool SessionNowEmpty, bool SessionHasBackground);
 

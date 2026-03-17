@@ -1,4 +1,5 @@
 using SensorPal.Server.Services;
+using SensorPal.Server.Storage;
 
 namespace SensorPal.Server.Endpoints;
 
@@ -8,12 +9,17 @@ static class StatusEndpoints
     {
         var startedAt = time.GetLocalNow();
 
-        app.MapGet("/status", (MonitoringStateService state) => new StatusDto
+        app.MapGet("/status", async (MonitoringStateService state, SettingsRepository settings) =>
         {
-            Name = "SensorPal",
-            StartedAt = startedAt,
-            Now = time.GetLocalNow(),
-            Mode = state.State.ToString()
+            var s = await settings.GetAsync();
+            return new StatusDto
+            {
+                Name = "SensorPal",
+                StartedAt = startedAt,
+                Now = time.GetLocalNow(),
+                Mode = state.State.ToString(),
+                AutoStopTime = s.AutoStopTime,
+            };
         })
         .WithSummary("Server health and current monitoring mode")
         .WithDescription("Returns the server name, start time, current time and monitoring state (Idle / Monitoring). " +

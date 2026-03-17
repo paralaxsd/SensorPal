@@ -69,6 +69,13 @@
                        FontSize="12" />
             </VerticalStackLayout>
 
+            <!-- Auto-stop label (shown when auto-stop is configured AND monitoring is active) -->
+            <Label x:Name="AutoStopLabel"
+                   IsVisible="False"
+                   TextColor="Gray"
+                   FontSize="12"
+                   HorizontalTextAlignment="Center" />
+
             <!-- Live stats (shown only when monitoring) -->
             <VerticalStackLayout x:Name="LiveStatsPanel"
                                  IsVisible="False"

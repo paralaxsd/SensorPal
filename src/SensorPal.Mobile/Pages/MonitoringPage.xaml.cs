@@ -16,6 +16,7 @@ public partial class MonitoringPage : ContentPage
     IDispatcherTimer? _blinkTimer;
     bool _blinkOn;
     bool _levelRefreshing;
+    string? _autoStopTime;
 
     public MonitoringPage(SensorPalClient client, NotificationService notificationService)
     {
@@ -28,6 +29,7 @@ public partial class MonitoringPage : ContentPage
     {
         base.OnAppearing();
         _ = LoadSessionsAsync();
+        _ = LoadAutoStopTimeAsync();
         StartLevelTimer();
     }
 
@@ -234,6 +236,8 @@ public partial class MonitoringPage : ContentPage
 
         if (ui.Blink) StartBlinkTimer(); else StopBlinkTimer();
         StatusLabel.Opacity = 1.0;
+
+        UpdateAutoStopLabel();
     }
 
     void StartBlinkTimer()
@@ -287,5 +291,24 @@ public partial class MonitoringPage : ContentPage
             SessionsLabel.Text = $"Recent Sessions ({sessions.Count} total)";
         }
         catch { /* server may not be running */ }
+    }
+
+    async Task LoadAutoStopTimeAsync()
+    {
+        try
+        {
+            var settings = await _client.GetSettingsAsync();
+            _autoStopTime = settings?.AutoStopTime;
+            UpdateAutoStopLabel();
+        }
+        catch { /* server may not be running */ }
+    }
+
+    void UpdateAutoStopLabel()
+    {
+        var visible = _autoStopTime is { } && _isMonitoring;
+        AutoStopLabel.IsVisible = visible;
+        if (visible)
+            AutoStopLabel.Text = $"Auto-stop at {_autoStopTime}";
     }
 }

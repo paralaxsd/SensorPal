@@ -63,6 +63,25 @@
 
                 </Grid>
 
+                <!-- Scheduling -->
+                <Label Text="Scheduling" FontAttributes="Bold" FontSize="18" />
+
+                <VerticalStackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                        <Label Text="Auto-stop at" VerticalOptions="Center" />
+                        <TimePicker x:Name="AutoStopTimePicker"
+                                    Grid.Column="1"
+                                    IsEnabled="False"
+                                    VerticalOptions="Center" />
+                        <Switch x:Name="AutoStopSwitch"
+                                Grid.Column="2"
+                                VerticalOptions="Center"
+                                Toggled="OnAutoStopToggled" />
+                    </Grid>
+                    <Label Text="Monitoring stops automatically at this local time each day."
+                           TextColor="Gray" FontSize="12" />
+                </VerticalStackLayout>
+
             </VerticalStackLayout>
 
             <!-- Notifications -->

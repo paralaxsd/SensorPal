@@ -4,4 +4,5 @@ public sealed record SettingsDto(
     double NoiseThresholdDb,
     int PreRollSeconds,
     int PostRollSeconds,
-    int BackgroundBitrate);
+    int BackgroundBitrate,
+    string? AutoStopTime = null);

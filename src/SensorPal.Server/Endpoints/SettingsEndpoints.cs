@@ -10,7 +10,9 @@ static class SettingsEndpoints
         app.MapGet("/settings", async (SettingsRepository repo) =>
         {
             var s = await repo.GetAsync();
-            return new SettingsDto(s.NoiseThresholdDb, s.PreRollSeconds, s.PostRollSeconds, s.BackgroundBitrate);
+            return new SettingsDto(
+                s.NoiseThresholdDb, s.PreRollSeconds, s.PostRollSeconds, s.BackgroundBitrate,
+                s.AutoStopTime);
         })
         .WithSummary("Get noise detection settings")
         .WithDescription("Returns the current noise detection configuration: threshold (dBFS), " +
@@ -18,12 +20,20 @@ static class SettingsEndpoints
 
         app.MapPut("/settings", async (SettingsDto dto, SettingsRepository repo) =>
         {
+            // Validate AutoStopTime if provided.
+            if (dto.AutoStopTime is { } rawTime
+                && !TimeOnly.TryParse(rawTime, out _))
+            {
+                return Results.BadRequest("AutoStopTime must be in HH:mm format.");
+            }
+
             await repo.SaveAsync(new AppSettings
             {
                 NoiseThresholdDb = dto.NoiseThresholdDb,
                 PreRollSeconds = dto.PreRollSeconds,
                 PostRollSeconds = dto.PostRollSeconds,
                 BackgroundBitrate = dto.BackgroundBitrate,
+                AutoStopTime = dto.AutoStopTime,
             });
             return Results.NoContent();
         })

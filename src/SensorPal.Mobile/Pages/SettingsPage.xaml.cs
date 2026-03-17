@@ -76,6 +76,11 @@ public partial class SettingsPage : ContentPage
                 SetPostRoll(dto.PostRollSeconds);
                 BitratePicker.SelectedIndex = Array.IndexOf(BitrateOptions, dto.BackgroundBitrate)
                     is var idx && idx >= 0 ? idx : 1;
+                var hasAutoStop = TimeOnly.TryParse(dto.AutoStopTime, out var stopTime);
+                AutoStopSwitch.IsToggled = hasAutoStop;
+                AutoStopTimePicker.IsEnabled = hasAutoStop;
+                if (hasAutoStop)
+                    AutoStopTimePicker.Time = (TimeSpan?)stopTime.ToTimeSpan();
             }
             finally
             {
@@ -153,6 +158,9 @@ public partial class SettingsPage : ContentPage
         }
     }
 
+    void OnAutoStopToggled(object? sender, ToggledEventArgs e)
+        => AutoStopTimePicker.IsEnabled = e.Value;
+
     void OnCancelClicked(object? sender, EventArgs e)
         => _ = Navigation.PopModalAsync();
 
@@ -177,11 +185,17 @@ public partial class SettingsPage : ContentPage
                         ? BitrateOptions[BitratePicker.SelectedIndex]
                         : 64;
 
+                    var t = AutoStopTimePicker.Time ?? TimeSpan.Zero;
+                    var autoStopTime = AutoStopSwitch.IsToggled
+                        ? $"{(int)t.TotalHours:D2}:{t.Minutes:D2}"
+                        : null;
+
                     var dto = new SettingsDto(
                         NoiseThresholdDb: ThresholdSlider.Value,
                         PreRollSeconds: _preRoll,
                         PostRollSeconds: _postRoll,
-                        BackgroundBitrate: bitrate);
+                        BackgroundBitrate: bitrate,
+                        AutoStopTime: autoStopTime);
 
                     await _client.SaveSettingsAsync(dto);
                 }
