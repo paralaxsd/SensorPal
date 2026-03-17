@@ -97,12 +97,15 @@
                             EmptyView="No sessions yet.">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:MonitoringSessionDto">
-                        <Grid Padding="0,8" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                        <Grid Padding="0,8" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                             <VerticalStackLayout Grid.Column="0">
                                 <Label Text="{Binding StartedAt, Converter={StaticResource LocalDateTime}}"
                                        FontAttributes="Bold" />
                                 <Label Text="{Binding EventCount, StringFormat='{0} event(s)'}"
                                        TextColor="Gray" FontSize="13" />
+                                <Label Text="{Binding AudioSizeText}"
+                                       TextColor="Gray" FontSize="12"
+                                       IsVisible="{Binding HasAudio}" />
                             </VerticalStackLayout>
                             <Label Grid.Column="1"
                                    Text="{Binding StatusText}"
@@ -117,6 +120,16 @@
                                     Clicked="OnPlaySessionClicked"
                                     Padding="4,0"
                                     ToolTipProperties.Text="Play continuous background recording for this session" />
+                            <Button Grid.Column="3"
+                                    Text="ℹ"
+                                    FontSize="15"
+                                    BackgroundColor="Transparent"
+                                    TextColor="Gray"
+                                    IsVisible="{Binding HasAudio}"
+                                    CommandParameter="{Binding .}"
+                                    Clicked="OnSessionInfoClicked"
+                                    Padding="4,0"
+                                    ToolTipProperties.Text="Show file path, size and bitrate" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

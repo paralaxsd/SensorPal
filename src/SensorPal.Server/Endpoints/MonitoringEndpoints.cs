@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using SensorPal.Server.Configuration;
 using SensorPal.Server.Entities;
 using SensorPal.Server.Services;
 using SensorPal.Server.Storage;
@@ -28,10 +30,11 @@ static class MonitoringEndpoints
         .WithDescription("Transitions from Monitoring back to Idle. " +
             "Finalizes the background MP3 file and persists the session record to the database.");
 
-        group.MapGet("/sessions", async (SessionRepository repo) =>
+        group.MapGet("/sessions", async (SessionRepository repo, IOptions<AudioConfig> config) =>
         {
             var sessions = await repo.GetSessionsAsync();
-            return sessions.Select(ToDto).ToList();
+            var bitrate = config.Value.BackgroundBitrate;
+            return sessions.Select(s => ToDto(s, bitrate)).ToList();
         })
         .WithSummary("List all monitoring sessions")
         .WithDescription("Returns all past and active monitoring sessions, newest first. " +
@@ -147,13 +150,18 @@ static class MonitoringEndpoints
 
     class Log;
 
-    static MonitoringSessionDto ToDto(MonitoringSession s) => new()
+    static MonitoringSessionDto ToDto(MonitoringSession s, int bitrateKbps) => new()
     {
         Id = s.Id,
         StartedAt = new DateTimeOffset(s.StartedAt, TimeSpan.Zero),
         EndedAt = s.EndedAt.HasValue ? new DateTimeOffset(s.EndedAt.Value, TimeSpan.Zero) : null,
         EventCount = s.EventCount,
         IsActive = s.EndedAt is null,
-        HasAudio = s.BackgroundFile is not null
+        HasAudio = s.BackgroundFile is not null,
+        AudioFilePath = s.BackgroundFile,
+        AudioFileSizeBytes = s.BackgroundFile is { } path && File.Exists(path)
+            ? new FileInfo(path).Length
+            : null,
+        AudioBitRateKbps = s.BackgroundFile is not null ? bitrateKbps : null,
     };
 }

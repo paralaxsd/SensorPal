@@ -33,6 +33,9 @@ sealed class MonitoringSessionDto
     public int EventCount { get; init; }
     public bool IsActive { get; init; }
     public bool HasAudio { get; init; }
+    public string? AudioFilePath { get; init; }
+    public long? AudioFileSizeBytes { get; init; }
+    public int? AudioBitRateKbps { get; init; }
 }
 
 sealed class LiveSessionStatsDto

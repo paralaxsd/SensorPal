@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SensorPal.Mobile.Pages.SessionInfoPage">
+
+    <Grid RowDefinitions="Auto, Auto, Auto, *, Auto" Padding="16">
+
+        <Label Grid.Row="0"
+               Text="Session Recording Info"
+               FontSize="18"
+               FontAttributes="Bold"
+               Margin="0,0,0,16" />
+
+        <!-- File path (readonly, natively selectable/copyable) -->
+        <VerticalStackLayout Grid.Row="1" Spacing="4" Margin="0,0,0,16">
+            <Label Text="File path on server" TextColor="Gray" FontSize="12" />
+            <Entry x:Name="PathEntry" IsReadOnly="True" FontSize="13" />
+        </VerticalStackLayout>
+
+        <!-- Size + Bitrate -->
+        <Grid Grid.Row="2"
+              ColumnDefinitions="Auto,*"
+              RowDefinitions="Auto,Auto"
+              ColumnSpacing="16" RowSpacing="8">
+            <Label Grid.Row="0" Grid.Column="0" Text="File size" TextColor="Gray" VerticalOptions="Center" />
+            <Label Grid.Row="0" Grid.Column="1" x:Name="SizeLabel" FontAttributes="Bold" VerticalOptions="Center" />
+            <Label Grid.Row="1" Grid.Column="0" Text="Bitrate" TextColor="Gray" VerticalOptions="Center" />
+            <Label Grid.Row="1" Grid.Column="1" x:Name="BitrateLabel" FontAttributes="Bold" VerticalOptions="Center" />
+        </Grid>
+
+        <Button Grid.Row="4"
+                Text="Close"
+                HorizontalOptions="End"
+                Margin="0,8,0,0"
+                Clicked="OnCloseClicked" />
+
+    </Grid>
+
+</ContentPage>

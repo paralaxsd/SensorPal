@@ -51,6 +51,12 @@ public partial class SessionsPage : ContentPage
         await this.ShowSessionPlayerAsync(session, url);
     }
 
+    async void OnSessionInfoClicked(object? sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: MonitoringSessionDto session }) return;
+        await this.ShowSessionInfoAsync(session);
+    }
+
     async void OnDeleteSessionClicked(object? sender, EventArgs e)
     {
         if (sender is not Button { CommandParameter: MonitoringSessionDto session }) return;

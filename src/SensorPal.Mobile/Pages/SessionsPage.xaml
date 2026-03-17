@@ -24,7 +24,7 @@
                         EmptyView="No sessions yet.">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:MonitoringSessionDto">
-                    <Grid Padding="16,8" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                    <Grid Padding="16,8" ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="12">
                         <!-- Tap the info area to navigate to EventsPage for that day -->
                         <VerticalStackLayout Grid.Column="0">
                             <VerticalStackLayout.GestureRecognizers>
@@ -35,6 +35,9 @@
                                    FontAttributes="Bold" />
                             <Label Text="{Binding EventCount, StringFormat='{0} event(s)'}"
                                    TextColor="Gray" FontSize="13" />
+                            <Label Text="{Binding AudioSizeText}"
+                                   TextColor="Gray" FontSize="12"
+                                   IsVisible="{Binding HasAudio}" />
                         </VerticalStackLayout>
                         <Label Grid.Column="1"
                                Text="{Binding StatusText}"
@@ -50,6 +53,16 @@
                                 Padding="4,0"
                                 ToolTipProperties.Text="Play continuous background recording for this session" />
                         <Button Grid.Column="3"
+                                Text="ℹ"
+                                FontSize="15"
+                                BackgroundColor="Transparent"
+                                TextColor="Gray"
+                                IsVisible="{Binding HasAudio}"
+                                CommandParameter="{Binding .}"
+                                Clicked="OnSessionInfoClicked"
+                                Padding="4,0"
+                                ToolTipProperties.Text="Show file path, size and bitrate" />
+                        <Button Grid.Column="4"
                                 Text="🗑"
                                 FontSize="16"
                                 BackgroundColor="Transparent"

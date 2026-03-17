@@ -17,5 +17,12 @@ static class NavigationExtensions
             player.Load(session, url);
             return page.Navigation.PushModalAsync(player);
         }
+
+        public Task ShowSessionInfoAsync(MonitoringSessionDto session)
+        {
+            var infoPage = new SessionInfoPage();
+            infoPage.Load(session);
+            return page.Navigation.PushModalAsync(infoPage);
+        }
     }
 }

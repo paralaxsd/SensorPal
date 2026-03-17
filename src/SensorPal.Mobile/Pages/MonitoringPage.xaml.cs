@@ -267,6 +267,12 @@ public partial class MonitoringPage : ContentPage
         await this.ShowSessionPlayerAsync(session, _client.GetSessionAudioUrl(session.Id));
     }
 
+    async void OnSessionInfoClicked(object? sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: MonitoringSessionDto session }) return;
+        await this.ShowSessionInfoAsync(session);
+    }
+
     async void OnShowAllSessionsClicked(object? sender, EventArgs e)
     {
         var page = Handler!.MauiContext!.Services.GetRequiredService<SessionsPage>();
