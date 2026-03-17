@@ -122,6 +122,12 @@ static class Program
         await FixDanglingActiveSessions(app, ctx);
     }
 
+    static async Task LogApiKeyAsync(WebApplication app)
+    {
+        var settings = await app.Services.GetRequiredService<SettingsRepository>().GetAsync();
+        app.Logger.LogWarning("API Key (copy into mobile app Settings): {ApiKey}", settings.ApiKey);
+    }
+
     static async Task FixDanglingActiveSessions(WebApplication app, SensorPalDbContext ctx)
     {
         // Close any sessions left open by a previous crash
@@ -131,12 +137,6 @@ static class Program
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.EndedAt, now));
         if (closed > 0)
             app.Logger.LogWarning("Closed {Count} stale session(s) from previous crash", closed);
-    }
-
-    static async Task LogApiKeyAsync(WebApplication app)
-    {
-        var settings = await app.Services.GetRequiredService<SettingsRepository>().GetAsync();
-        app.Logger.LogWarning("API Key (copy into mobile app Settings): {ApiKey}", settings.ApiKey);
     }
 
     static void MapEndpoints(this WebApplication app)

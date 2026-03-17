@@ -127,7 +127,7 @@ sealed class AudioCaptureService(
         logger.LogInformation(
             "Recording started on '{Device}', session #{Id}, format: {Ch}ch {Rate}Hz {Bits}bit {Enc}",
             deviceName, _currentSessionId,
-            _captureFormat.Channels, _captureFormat.SampleRate,
+            _captureFormat!.Channels, _captureFormat.SampleRate,
             _captureFormat.BitsPerSample, _captureFormat.Encoding);
     }
 

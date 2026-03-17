@@ -80,7 +80,6 @@ sealed class SettingsRepository(
         existing?.ApiKey = settings.ApiKey;
 
         await db.SaveChangesAsync();
-        logger.LogWarning("API Key generated — copy this into the mobile app Settings: {ApiKey}", settings.ApiKey);
     }
 
     /// <summary>
