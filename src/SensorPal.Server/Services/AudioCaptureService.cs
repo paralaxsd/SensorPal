@@ -25,6 +25,11 @@ sealed class AudioCaptureService(
     NoiseDetector? _detector;
     WaveFormat? _captureFormat;
 
+    // Mono format derived from _captureFormat — used for all writers.
+    // _captureFormat may be stereo (e.g. Focusrite Scarlett reports 2ch even for a mono mic);
+    // _writeFormat is always 1ch so the MP3 and WAV clips contain proper mono audio.
+    WaveFormat? _writeFormat;
+
     long _currentSessionId;
     DateTime _backgroundStart;
     int _sessionEventCount;
@@ -97,19 +102,19 @@ sealed class AudioCaptureService(
     async Task StartCaptureAsync()
     {
         var (s, deviceName) = await InitCaptureAsync();
-        var preRollBytes = _captureFormat!.AverageBytesPerSecond * s.PreRollSeconds;
+        var preRollBytes = _writeFormat!.AverageBytesPerSecond * s.PreRollSeconds;
         var postRollMs = s.PostRollSeconds * 1000;
 
         _sessionEventCount = 0;
         _backgroundStart = time.GetUtcNow().UtcDateTime;
         var backgroundFile = storage.GetBackgroundFilePath(_backgroundStart);
-        _backgroundWriter = new LameMP3FileWriter(backgroundFile, _captureFormat, s.BackgroundBitrate);
+        _backgroundWriter = new LameMP3FileWriter(backgroundFile, _writeFormat, s.BackgroundBitrate);
 
         _currentSessionId = await sessions.StartSessionAsync(backgroundFile);
 
         _clipRecorder = new ClipRecorder(
             _currentSessionId, _backgroundStart,
-            _captureFormat, preRollBytes, postRollMs,
+            _writeFormat, preRollBytes, postRollMs,
             events, sessions, storage, clipLogger);
         _clipRecorder.ClipPersisted += () => _sessionEventCount++;
 
@@ -185,18 +190,55 @@ sealed class AudioCaptureService(
         var device = FindDevice(_config.DeviceName);
         _capture = new WasapiCapture(device);
         _captureFormat = _capture.WaveFormat;
+
+        // Derive a mono write format — WASAPI devices often report stereo even when only
+        // one channel carries a mic signal. Writers use this; detector keeps stereo so that
+        // threshold calibration is unaffected.
+        _writeFormat = _captureFormat.Channels == 1
+            ? _captureFormat
+            : _captureFormat.Encoding == WaveFormatEncoding.IeeeFloat
+                ? WaveFormat.CreateIeeeFloatWaveFormat(_captureFormat.SampleRate, 1)
+                : new WaveFormat(_captureFormat.SampleRate, _captureFormat.BitsPerSample, 1);
+
         _detector = new NoiseDetector(s.NoiseThresholdDb, _captureFormat, time);
         return (s, device.FriendlyName);
     }
 
     void OnDataAvailable(object? sender, WaveInEventArgs e)
     {
+        // Detector always receives the native (possibly stereo) capture data so that
+        // threshold calibration remains consistent regardless of channel count.
         _detector!.Process(e.Buffer, 0, e.BytesRecorded);
 
         if (_calibrating) return;
 
-        _backgroundWriter!.Write(e.Buffer, 0, e.BytesRecorded);
-        _clipRecorder!.ProcessData(e.Buffer, 0, e.BytesRecorded);
+        // Writers receive channel-0 mono data — prevents silent right channel from
+        // producing stereo recordings when a mono mic is connected to input 1.
+        var (monoBuffer, monoBytes) = _captureFormat!.Channels > 1
+            ? ExtractChannel(e.Buffer, e.BytesRecorded, channel: 0)
+            : (e.Buffer, e.BytesRecorded);
+
+        _backgroundWriter!.Write(monoBuffer, 0, monoBytes);
+        _clipRecorder!.ProcessData(monoBuffer, 0, monoBytes);
+    }
+
+    // Extracts a single channel from an interleaved multi-channel buffer.
+    // Works for any sample width (PCM 16/24/32-bit, IEEE float 32-bit).
+    (byte[] buffer, int count) ExtractChannel(byte[] buffer, int byteCount, int channel)
+    {
+        var bytesPerSample = _captureFormat!.BitsPerSample / 8;
+        var channels = _captureFormat.Channels;
+        var frameCount = byteCount / (bytesPerSample * channels);
+        var mono = new byte[frameCount * bytesPerSample];
+
+        for (var f = 0; f < frameCount; f++)
+        {
+            var src = f * channels * bytesPerSample + channel * bytesPerSample;
+            var dst = f * bytesPerSample;
+            Buffer.BlockCopy(buffer, src, mono, dst, bytesPerSample);
+        }
+
+        return (mono, mono.Length);
     }
 
     static MMDevice FindDevice(string nameSubstring)
