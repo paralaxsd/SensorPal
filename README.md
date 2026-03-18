@@ -1,6 +1,18 @@
-# SensorPal [![ci-android](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-android.yml/badge.svg)](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-android.yml) [![tests](https://github.com/paralaxsd/SensorPal/actions/workflows/tests.yml/badge.svg)](https://github.com/paralaxsd/SensorPal/actions/workflows/tests.yml)
+# SensorPal [![ci-android](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-android.yml/badge.svg)](https://github.com/paralaxsd/SensorPal/actions/workflows/ci-android.yml) [![tests](https://github.com/paralaxsd/SensorPal/actions/workflows/tests.yml/badge.svg)](https://github.com/paralaxsd/SensorPal/actions/workflows/tests.yml) [![Latest Release](https://img.shields.io/github/v/release/paralaxsd/SensorPal?include_prereleases)](https://github.com/paralaxsd/SensorPal/releases/latest)
 
 Night-time noise monitoring for Windows + Android. Captures audio from a USB audio interface, detects noise events above a configurable threshold, records WAV clips with pre/post-roll, and lets you browse and play back events from a MAUI mobile app.
+
+## Downloads
+
+The latest release is always at [github.com/paralaxsd/SensorPal/releases/latest](https://github.com/paralaxsd/SensorPal/releases/latest).
+
+| File | Description |
+|---|---|
+| `SensorPal-windows-win-x64.zip` | Windows client — extract anywhere, run `SensorPal.Mobile.exe` |
+| `SensorPal-server-win-x64.zip` | Server — extract anywhere, run `SensorPal.Server.exe` |
+| `SensorPal-android.zip` | Android APK — sideload or deploy via `.\build.ps1 DeployAndroid` |
+
+---
 
 ## Prerequisites
 
@@ -181,6 +193,10 @@ The solution uses [Nuke](https://nuke.build) as its build automation tool. No gl
 | `Test` | Build and run all test projects |
 | `PublishAndroid` | Build a Release Android APK → `artifacts/android/` |
 | `PublishServer` | Publish a self-contained server build → `artifacts/server/` |
+| `PackWindowsClient` | Publish + zip the Windows client → `artifacts/SensorPal-windows-win-x64.zip` |
+| `PackServer` | Publish + zip the server (self-contained win-x64) → `artifacts/SensorPal-server-win-x64.zip` |
+| `PackAndroid` | Build + zip the Android APK → `artifacts/SensorPal-android.zip` |
+| `Release` | Run all Pack targets and create a GitHub Release for the current tag |
 | `DeployAndroid` | Build and install the Android app on a connected device via ADB |
 | `ListAndroidDevices` | List all Android devices currently visible to ADB |
 
