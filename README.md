@@ -8,9 +8,9 @@ The latest release is always at [github.com/paralaxsd/SensorPal/releases/latest]
 
 | File | Description |
 |---|---|
-| `SensorPal-windows-win-x64.zip` | Windows client — extract anywhere, run `SensorPal.Mobile.exe` |
+| `SensorPal-client-win-x64.zip` | Windows client — extract anywhere, run `SensorPal.Mobile.exe` |
 | `SensorPal-server-win-x64.zip` | Server — extract anywhere, run `SensorPal.Server.exe` |
-| `SensorPal-android.zip` | Android APK — sideload or deploy via `.\build.ps1 DeployAndroid` |
+| `SensorPal-client-android.zip` | Android APK — sideload or deploy via `.\build.ps1 DeployAndroid` |
 
 ---
 
@@ -193,9 +193,9 @@ The solution uses [Nuke](https://nuke.build) as its build automation tool. No gl
 | `Test` | Build and run all test projects |
 | `PublishAndroid` | Build a Release Android APK → `artifacts/android/` |
 | `PublishServer` | Publish a self-contained server build → `artifacts/server/` |
-| `PackWindowsClient` | Publish + zip the Windows client → `artifacts/SensorPal-windows-win-x64.zip` |
+| `PackWindowsClient` | Publish + zip the Windows client → `artifacts/SensorPal-client-win-x64.zip` |
 | `PackServer` | Publish + zip the server (self-contained win-x64) → `artifacts/SensorPal-server-win-x64.zip` |
-| `PackAndroid` | Build + zip the Android APK → `artifacts/SensorPal-android.zip` |
+| `PackAndroid` | Build + zip the Android APK → `artifacts/SensorPal-client-android.zip` |
 | `Release` | Run all Pack targets and create a GitHub Release for the current tag |
 | `DeployAndroid` | Build and install the Android app on a connected device via ADB |
 | `ListAndroidDevices` | List all Android devices currently visible to ADB |

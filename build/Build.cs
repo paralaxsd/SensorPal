@@ -60,9 +60,9 @@ sealed class Build : NukeBuild
 
     AbsolutePath WindowsClientPublishDir => ArtifactsDir / "windows";
     AbsolutePath ServerPortablePublishDir => ArtifactsDir / "server-portable";
-    AbsolutePath WindowsClientZip => ArtifactsDir / "SensorPal-windows-win-x64.zip";
+    AbsolutePath WindowsClientZip => ArtifactsDir / "SensorPal-client-win-x64.zip";
     AbsolutePath ServerZip => ArtifactsDir / "SensorPal-server-win-x64.zip";
-    AbsolutePath AndroidZip => ArtifactsDir / "SensorPal-android.zip";
+    AbsolutePath AndroidZip => ArtifactsDir / "SensorPal-client-android.zip";
 
     Target Clean => _ => _
         .Description("Remove all build outputs")

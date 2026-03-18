@@ -43,18 +43,18 @@ jobs:
         run: ./build.cmd Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: 'Publish: SensorPal-android.zip'
+      - name: 'Publish: SensorPal-client-android.zip'
         uses: actions/upload-artifact@v5
         with:
-          name: SensorPal-android.zip
-          path: artifacts/SensorPal-android.zip
+          name: SensorPal-client-android.zip
+          path: artifacts/SensorPal-client-android.zip
       - name: 'Publish: SensorPal-server-win-x64.zip'
         uses: actions/upload-artifact@v5
         with:
           name: SensorPal-server-win-x64.zip
           path: artifacts/SensorPal-server-win-x64.zip
-      - name: 'Publish: SensorPal-windows-win-x64.zip'
+      - name: 'Publish: SensorPal-client-win-x64.zip'
         uses: actions/upload-artifact@v5
         with:
-          name: SensorPal-windows-win-x64.zip
-          path: artifacts/SensorPal-windows-win-x64.zip
+          name: SensorPal-client-win-x64.zip
+          path: artifacts/SensorPal-client-win-x64.zip
