@@ -19,6 +19,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
     OnPushTags = ["v*"],
     InvokedTargets = [nameof(Release)],
     WritePermissions = [GitHubActionsPermissions.Contents],
+    EnableGitHubToken = true,
     FetchDepth = 0)]
 [GitHubActions(
     "ci-android", GitHubActionsImage.UbuntuLatest,
