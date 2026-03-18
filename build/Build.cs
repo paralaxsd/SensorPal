@@ -160,7 +160,6 @@ sealed class Build : NukeBuild
                 .SetConfiguration(Configuration.Release)
                 .SetRuntime("win-x64")
                 .SetSelfContained(true)
-                .EnableNoRestore()
                 .SetOutput(ServerPortablePublishDir));
 
             ServerPortablePublishDir.ZipTo(ServerZip);
