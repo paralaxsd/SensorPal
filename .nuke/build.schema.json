@@ -29,8 +29,12 @@
         "DeployAndroid",
         "InstallWorkloads",
         "ListAndroidDevices",
+        "PackAndroid",
+        "PackServer",
+        "PackWindowsClient",
         "PublishAndroid",
         "PublishServer",
+        "Release",
         "Restore",
         "Test"
       ]

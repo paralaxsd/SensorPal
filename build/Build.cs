@@ -7,12 +7,19 @@ using Nuke.Common.Utilities.Collections;
 using Serilog;
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 // ReSharper disable UnusedMember.Local
 // ReSharper disable AllUnderscoreLocalParameterName
 
+[GitHubActions(
+    "release", GitHubActionsImage.WindowsLatest,
+    OnPushTags = ["v*"],
+    InvokedTargets = [nameof(Release)],
+    WritePermissions = [GitHubActionsPermissions.Contents],
+    FetchDepth = 0)]
 [GitHubActions(
     "ci-android", GitHubActionsImage.UbuntuLatest,
     On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.WorkflowDispatch],
@@ -50,6 +57,12 @@ sealed class Build : NukeBuild
     AbsolutePath TestsDir => RootDirectory / "tests";
     AbsolutePath CoverageDir => RootDirectory / "coverage";
 
+    AbsolutePath WindowsClientPublishDir => ArtifactsDir / "windows";
+    AbsolutePath ServerPortablePublishDir => ArtifactsDir / "server-portable";
+    AbsolutePath WindowsClientZip => ArtifactsDir / "SensorPal-windows-win-x64.zip";
+    AbsolutePath ServerZip => ArtifactsDir / "SensorPal-server-win-x64.zip";
+    AbsolutePath AndroidZip => ArtifactsDir / "SensorPal-android.zip";
+
     Target Clean => _ => _
         .Description("Remove all build outputs")
         .Before(Restore)
@@ -58,9 +71,14 @@ sealed class Build : NukeBuild
             .SetConfiguration(Configuration)));
 
     Target InstallWorkloads => _ => _
-        .Description("Install the maui-android workload (CI only)")
+        .Description("Install required MAUI workloads (CI only)")
         .OnlyWhenDynamic(() => !IsLocalBuild)
-        .Executes(() => DotNet("workload install maui-android"));
+        .Executes(() =>
+        {
+            DotNet("workload install maui-android");
+            if (OperatingSystem.IsWindows())
+                DotNet("workload install maui-windows");
+        });
 
     Target Restore => _ => _
         .Description("Restore NuGet packages for the entire solution")
@@ -112,6 +130,84 @@ sealed class Build : NukeBuild
             .SetConfiguration(Configuration.Release)
             .EnableNoRestore()
             .SetOutput(ArtifactsDir / "server")));
+
+    Target PackWindowsClient => _ => _
+        .Description("Publish the MAUI Windows client (self-contained win-x64) and zip into artifacts/")
+        .DependsOn(Restore)
+        .Produces(WindowsClientZip)
+        .Executes(() =>
+        {
+            DotNetPublish(s => s
+                .SetProject(MobileProject)
+                .SetConfiguration(Configuration.Release)
+                .SetFramework("net10.0-windows10.0.19041.0")
+                .SetRuntime("win-x64")
+                .SetSelfContained(true)
+                .EnableNoRestore()
+                .SetOutput(WindowsClientPublishDir));
+
+            WindowsClientPublishDir.ZipTo(WindowsClientZip);
+        });
+
+    Target PackServer => _ => _
+        .Description("Publish the server (self-contained win-x64) and zip into artifacts/")
+        .DependsOn(Restore)
+        .Produces(ServerZip)
+        .Executes(() =>
+        {
+            DotNetPublish(s => s
+                .SetProject(ServerProject)
+                .SetConfiguration(Configuration.Release)
+                .SetRuntime("win-x64")
+                .SetSelfContained(true)
+                .EnableNoRestore()
+                .SetOutput(ServerPortablePublishDir));
+
+            ServerPortablePublishDir.ZipTo(ServerZip);
+        });
+
+    Target PackAndroid => _ => _
+        .Description("Build the Android APK and zip into artifacts/")
+        .DependsOn(Restore)
+        .Produces(AndroidZip)
+        .Executes(() =>
+        {
+            var androidDir = ArtifactsDir / "android";
+
+            DotNetBuild(s => s
+                .SetProjectFile(MobileProject)
+                .SetConfiguration(Configuration.Release)
+                .SetFramework("net10.0-android")
+                .EnableNoRestore()
+                .SetOutputDirectory(androidDir));
+
+            var apks = androidDir.GlobFiles("*.apk");
+            Assert.NotEmpty(apks, "No APK found in android build output");
+
+            using var stream = File.Create(AndroidZip);
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
+            foreach (var apk in apks)
+                archive.CreateEntryFromFile(apk, Path.GetFileName(apk));
+        });
+
+    Target Release => _ => _
+        .Description("Build all release packages and create a GitHub Release for the current tag")
+        .DependsOn(PackWindowsClient, PackServer, PackAndroid)
+        .OnlyWhenDynamic(() => IsServerBuild)
+        .Executes(() =>
+        {
+            var tag = Environment.GetEnvironmentVariable("GITHUB_REF_NAME")
+                ?? throw new InvalidOperationException(
+                    "GITHUB_REF_NAME is not set — this target must run on GitHub Actions with a tag push.");
+
+            var assets = string.Join(" ", new[] { WindowsClientZip, ServerZip, AndroidZip }
+                .Select(p => $"\"{(string)p}\""));
+
+            ProcessTasks
+                .StartProcess("gh", $"release create \"{tag}\" {assets} --title \"SensorPal {tag}\" --generate-notes",
+                    workingDirectory: RootDirectory)
+                .AssertZeroExitCode();
+        });
 
     Target DeployAndroid => _ => _
         .Description("Build and deploy the Android app to a connected device via ADB (use --device-id to target a specific device, --aot for AOT)")
