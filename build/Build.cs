@@ -146,6 +146,7 @@ sealed class Build : NukeBuild
                 .SetSelfContained(true)
                 .EnableNoRestore()
                 .SetProperty("PublishReadyToRun", "false")
+                .SetProperty("PublishSingleFile", "true")
                 .SetOutput(WindowsClientPublishDir));
 
             WindowsClientPublishDir.ZipTo(WindowsClientZip);
