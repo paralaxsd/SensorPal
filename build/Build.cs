@@ -149,7 +149,7 @@ sealed class Build : NukeBuild
                 .SetProperty("PublishSingleFile", "true")
                 .SetOutput(WindowsClientPublishDir));
 
-            WindowsClientPublishDir.ZipTo(WindowsClientZip);
+            WindowsClientPublishDir.ZipTo(WindowsClientZip, f => !f.HasExtension(".pdb"));
         });
 
     Target PackServer => _ => _

@@ -7,9 +7,13 @@ public partial class AboutPage : ContentPage
     public AboutPage()
     {
         InitializeComponent();
-        VersionLabel.Text = $"Version {AppInfo.VersionString}";
+        var infoVersion = ThisAssembly.AssemblyInformationalVersion;
+        var semver = infoVersion.Contains('+') ? infoVersion[..infoVersion.IndexOf('+')] : infoVersion;
+        VersionLabel.Text = $"Version {semver}";
         CommitLabel.Text = $"{ThisAssembly.GitCommitIdShort} on {ThisAssembly.GitBranch}";
-        BuiltLabel.Text = ThisAssembly.GitCommitDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
+        
+        var buildDate = ThisAssembly.GitCommitDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
+        BuiltLabel.Text =  $"Built at {buildDate}";
         RepoLinkLabel.Text = ThisAssembly.RepositoryUrl;
 #if WINDOWS
         RuntimeLabel.IsVisible = false;
