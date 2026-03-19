@@ -70,9 +70,12 @@
                             <Label Grid.Row="0" Grid.Column="1"
                                    Text="{Binding PeakDb, StringFormat='{0:F1} dBFS'}"
                                    TextColor="OrangeRed" VerticalOptions="Center" />
-                            <Label Grid.Row="1" Grid.Column="0"
-                                   Text="{Binding ClipDurationMs, Converter={StaticResource Duration}, StringFormat='Clip: {0}'}"
-                                   TextColor="Gray" FontSize="13" />
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="1">
+                                <Label Text="{Binding ClipDurationMs, Converter={StaticResource Duration}, StringFormat='Clip: {0}'}"
+                                       TextColor="Gray" FontSize="13" />
+                                <Label Text="{Binding ClipOffsetText}"
+                                       TextColor="Gray" FontSize="12" />
+                            </VerticalStackLayout>
                             <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
                                 <Button Text="{Binding ButtonText}"
                                         FontSize="13"

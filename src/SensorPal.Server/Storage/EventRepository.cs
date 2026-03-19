@@ -29,6 +29,7 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
         var (start, end) = GetDayRange(date);
         return await db.NoiseEvents
+            .Include(e => e.Session)
             .Where(e => e.DetectedAt >= start && e.DetectedAt <= end)
             .OrderBy(e => e.DetectedAt)
             .ToListAsync();
@@ -45,7 +46,9 @@ sealed class EventRepository(IDbContextFactory<SensorPalDbContext> factory)
     public async Task<NoiseEvent?> GetEventAsync(long id)
     {
         await using var db = await factory.CreateDbContextAsync();
-        return await db.NoiseEvents.FindAsync(id);
+        return await db.NoiseEvents
+            .Include(e => e.Session)
+            .FirstOrDefaultAsync(e => e.Id == id);
     }
 
     public async Task<IReadOnlyList<NoiseEvent>> GetEventsBySessionAsync(long sessionId)

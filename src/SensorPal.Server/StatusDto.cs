@@ -23,6 +23,7 @@ sealed class NoiseEventDto
     public int ClipDurationMs { get; init; }
     public long BackgroundOffsetMs { get; init; }
     public bool HasClip { get; init; }
+    public TimeSpan ClipOffsetInSession { get; init; }
 }
 
 sealed class MonitoringSessionDto

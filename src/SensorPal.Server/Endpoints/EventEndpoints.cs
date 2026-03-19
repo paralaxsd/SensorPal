@@ -123,7 +123,8 @@ static class EventEndpoints
         DurationMs = e.DurationMs,
         ClipDurationMs = e.ClipDurationMs,
         BackgroundOffsetMs = e.BackgroundOffsetMs,
-        HasClip = e.ClipFile is not null && File.Exists(e.ClipFile)
+        HasClip = e.ClipFile is not null && File.Exists(e.ClipFile),
+        ClipOffsetInSession = e.DetectedAt - e.Session.StartedAt
     };
 
     class Log;  // placeholder for Log type

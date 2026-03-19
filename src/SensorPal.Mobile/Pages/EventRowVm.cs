@@ -40,6 +40,19 @@ public sealed class EventRowVm(NoiseEventDto evt) : INotifyPropertyChanged
     public string ButtonText => _isLoading ? "⏳" : _isPlaying ? "⏹ Stop" : "▶ Play";
     public bool CanInteract => !_isLoading && !_isDeleting;
 
+    public string ClipOffsetText
+    {
+        get
+        {
+            var t = evt.ClipOffsetInSession;
+            if (t.TotalHours >= 1)
+                return $"+{(int)t.TotalHours}h {t.Minutes}m into session";
+            if (t.TotalMinutes >= 1)
+                return $"+{(int)t.TotalMinutes}m {t.Seconds}s into session";
+            return $"+{(int)t.TotalSeconds}s into session";
+        }
+    }
+
     void Notify([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

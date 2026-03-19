@@ -8,4 +8,5 @@ public sealed record NoiseEventDto(
     int DurationMs,
     int ClipDurationMs,
     long BackgroundOffsetMs,
-    bool HasClip);
+    bool HasClip,
+    TimeSpan ClipOffsetInSession);
