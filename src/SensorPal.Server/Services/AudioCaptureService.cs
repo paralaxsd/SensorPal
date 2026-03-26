@@ -36,6 +36,10 @@ sealed class AudioCaptureService(
 
     bool _calibrating;
 
+    // Guards concurrent access between the WASAPI capture thread (OnDataAvailable) and
+    // StopCapture / StopCalibrate. Prevents disposing writers while a write is in progress.
+    readonly Lock _writeLock = new();
+
     /******************************************************************************************
      * PROPERTIES
      * ***************************************************************************************/
@@ -143,13 +147,20 @@ sealed class AudioCaptureService(
             detector.EventEnded -= clipRecorder.OnEventEnded;
         }
 
-        _clipRecorder?.FinishClipIfActive();
-        _clipRecorder?.Dispose();
-        _clipRecorder = null;
+        // Acquire the write lock before disposing: ensures any OnDataAvailable call that was
+        // already in progress finishes its Write() before we tear down the writers.
+        // Without this, the WASAPI capture thread can hold a reference to a disposed
+        // LameMP3FileWriter whose internal native callback delegate has been GC'd → crash.
+        lock (_writeLock)
+        {
+            _clipRecorder?.FinishClipIfActive();
+            _clipRecorder?.Dispose();
+            _clipRecorder = null;
 
-        _backgroundWriter?.Flush();
-        _backgroundWriter?.Dispose();
-        _backgroundWriter = null;
+            _backgroundWriter?.Flush();
+            _backgroundWriter?.Dispose();
+            _backgroundWriter = null;
+        }
 
         _ = sessions.EndSessionAsync(_currentSessionId);
         logger.LogInformation("Recording stopped, session #{Id} closed", _currentSessionId);
@@ -218,8 +229,17 @@ sealed class AudioCaptureService(
             ? ExtractChannel(e.Buffer, e.BytesRecorded, channel: 0)
             : (e.Buffer, e.BytesRecorded);
 
-        _backgroundWriter!.Write(monoBuffer, 0, monoBytes);
-        _clipRecorder!.ProcessData(monoBuffer, 0, monoBytes);
+        // Hold the write lock for the duration of the write. StopCapture acquires the same
+        // lock before disposing the writers, so it will wait until this call completes.
+        lock (_writeLock)
+        {
+            // Guard in case DataAvailable fires one last time after unsubscription races
+            // with StopCapture setting writers to null.
+            if (_backgroundWriter is null) return;
+
+            _backgroundWriter.Write(monoBuffer, 0, monoBytes);
+            _clipRecorder!.ProcessData(monoBuffer, 0, monoBytes);
+        }
     }
 
     // Extracts a single channel from an interleaved multi-channel buffer.
