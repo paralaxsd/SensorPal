@@ -22,7 +22,9 @@
 			"args": [
 				"run",
 				"--project",
-				"src/SensorPal.Server"
+				"src/SensorPal.Server",
+				"--launch-profile",
+				"http [Production]"
 			],
 			"isBackground": true,
 			"problemMatcher": []
