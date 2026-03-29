@@ -42,8 +42,11 @@ static class Program
     {
         var app = builder.Build();
 
-        app.Logger.LogInformation("SensorPal Server {Version} [{CommitId}]",
+        var logger = app.Logger;
+        logger.LogInformation("SensorPal Server {Version} [{CommitId}]",
             ThisAssembly.AssemblyShortFileVersion, ThisAssembly.GitCommitIdShort);
+        logger.LogInformation("Running in environment {EnvironmentName}", app.Environment.EnvironmentName);
+        logger.LogInformation("Content root: {ContentRoot}", app.Environment.ContentRootPath);
 
         await EnsureAndMigrateDbAsync(app);
         await LogApiKeyAsync(app);

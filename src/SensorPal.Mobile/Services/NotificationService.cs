@@ -6,6 +6,7 @@ using SensorPal.Shared.Models;
 using Android.Content;
 using Microsoft.Maui.ApplicationModel;
 using Plugin.LocalNotification;
+using Plugin.LocalNotification.AndroidOption;
 #endif
 
 namespace SensorPal.Mobile.Services;
@@ -30,6 +31,11 @@ public sealed class NotificationService : IDisposable
     // -1 = not yet observed; prevents spurious notification on first poll.
     int _lastKnownEventCount = -1;
     CancellationTokenSource? _cts;
+
+    // Set by Pause(); cleared when notifications are explicitly (re-)enabled.
+    // In-memory only — resets to false on app restart, which is the desired
+    // behaviour (foreground service resumes automatically on next launch).
+    bool _isPaused;
 
     public NotificationService(SensorPalClient client, ILogger<NotificationService> logger)
     {
@@ -68,7 +74,10 @@ public sealed class NotificationService : IDisposable
             }
         }
 
+        _logger.LogInformation("Notifications enabled");
         IsEnabled = true;
+        _isPaused = false;
+        StartAndroidForegroundService();
 #else
         IsEnabled = true;
         ResetEventCount();
@@ -81,13 +90,30 @@ public sealed class NotificationService : IDisposable
     /// <summary>Disables notifications and stops all background monitoring.</summary>
     public void Disable()
     {
+        _logger.LogInformation("Notifications disabled");
         IsEnabled = false;
+        _isPaused = false;
         ResetEventCount();
 #if ANDROID
         StopAndroidForegroundService();
 #else
         StopPollLoop();
 #endif
+    }
+
+    /// <summary>
+    /// Temporarily suppresses notifications without changing the persisted
+    /// IsEnabled preference. The foreground service calls this when the user
+    /// taps "Pause notifications" — the service stops itself immediately after.
+    /// Notifications resume automatically on the next app launch (because
+    /// _isPaused is in-memory only) or when the user re-enables via Settings.
+    /// </summary>
+    public bool IsPaused => _isPaused;
+
+    public void Pause()
+    {
+        _isPaused = true;
+        _logger.LogInformation("Notifications paused by user (background service stopped)");
     }
 
     /// <summary>
@@ -122,18 +148,22 @@ public sealed class NotificationService : IDisposable
     /// </summary>
     public async Task NotifyIfNewEventAsync(LiveLevelDto? level)
     {
-        if (!IsEnabled) return;
+        if (_isPaused || !IsEnabled) return;
         if (level?.ActiveSessionEventCount is not { } count) return;
 
         var prev = _lastKnownEventCount;
         _lastKnownEventCount = count;
 
-        if (prev >= 0 && count > prev)
-            await SendNotificationAsync(
-                "Noise Detected",
-                count == 1 ? "First event in current session"
-                           : $"{count} events detected this session",
-                EventNotificationId);
+        if (prev < 0 || count <= prev) return;
+
+        _logger.LogInformation(
+            "Noise event detected — sending notification (event count: {Count})", count);
+
+        await SendNotificationAsync(
+            "Noise Detected",
+            count == 1 ? "First event in current session"
+                       : $"{count} events detected this session",
+            EventNotificationId);
     }
 
     /// <summary>Resets the tracked count (call when a new session begins).</summary>
@@ -181,6 +211,10 @@ public sealed class NotificationService : IDisposable
             NotificationId = id,
             Title = title,
             Description = body,
+            Android = new AndroidOptions
+            {
+                IconSmallName = new AndroidIcon("ic_notification"),
+            },
         };
         await LocalNotificationCenter.Current.Show(request);
 #elif WINDOWS

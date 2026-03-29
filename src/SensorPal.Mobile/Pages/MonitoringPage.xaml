@@ -76,6 +76,14 @@
                    FontSize="12"
                    HorizontalTextAlignment="Center" />
 
+            <!-- Shown when notifications are enabled but the background service is paused -->
+            <Label x:Name="NotificationsPausedLabel"
+                   IsVisible="False"
+                   Text="🔕 Notifications paused — open Settings to resume"
+                   TextColor="Gray"
+                   FontSize="12"
+                   HorizontalTextAlignment="Center" />
+
             <!-- Live stats (shown only when monitoring) -->
             <VerticalStackLayout x:Name="LiveStatsPanel"
                                  IsVisible="False"

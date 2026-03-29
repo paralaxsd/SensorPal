@@ -30,6 +30,7 @@ public partial class MonitoringPage : ContentPage
         base.OnAppearing();
         _ = LoadSessionsAsync();
         _ = LoadAutoStopTimeAsync();
+        UpdateNotificationsPausedLabel();
         StartLevelTimer();
     }
 
@@ -142,6 +143,7 @@ public partial class MonitoringPage : ContentPage
         }
 
         AuthErrorLabel.IsVisible = _client.IsAuthError;
+        UpdateNotificationsPausedLabel();
 
         if (level?.Db is not { } db)
         {
@@ -316,5 +318,11 @@ public partial class MonitoringPage : ContentPage
         AutoStopLabel.IsVisible = visible;
         if (visible)
             AutoStopLabel.Text = $"Auto-stop at {_autoStopTime}";
+    }
+
+    void UpdateNotificationsPausedLabel()
+    {
+        NotificationsPausedLabel.IsVisible =
+            _notificationService.IsEnabled && _notificationService.IsPaused;
     }
 }

@@ -19,6 +19,8 @@ sealed class SensorPalForegroundService : Android.App.Service
 {
     const string ChannelId = "sensorpal_monitoring";
     const int ServiceNotificationId = 1001;
+    const int EventNotificationId = 42; // must match NotificationService.EventNotificationId
+    const string ActionStopTracking = "org.speckdrumm.sensorpal.mobile.ACTION_STOP_TRACKING";
 
     CancellationTokenSource? _cts;
 
@@ -27,6 +29,21 @@ sealed class SensorPalForegroundService : Android.App.Service
     public override StartCommandResult OnStartCommand(
         Intent? intent, StartCommandFlags flags, int startId)
     {
+        // User tapped "Stop tracking" in the notification — stop the service
+        // without touching the server or the IsEnabled preference so the
+        // service resumes automatically on next app launch.
+        if (intent?.Action == ActionStopTracking)
+        {
+            // Suppress further notifications from the UI poll loop, then clean
+            // up any lingering noise-event notification so the drawer is empty.
+            GetNotificationService()?.Pause();
+            (GetSystemService(NotificationService) as NotificationManager)
+                ?.Cancel(EventNotificationId);
+
+            StopSelf();
+            return StartCommandResult.NotSticky;
+        }
+
         // If the user disabled notifications while Android was restarting
         // the sticky service, bail out immediately.
         var notificationService = GetNotificationService();
@@ -110,6 +127,7 @@ sealed class SensorPalForegroundService : Android.App.Service
     static NotificationService? GetNotificationService() =>
         IPlatformApplication.Current?.Services.GetService<NotificationService>();
 
+
     [System.Runtime.Versioning.SupportedOSPlatform("android26.0")]
     void EnsureNotificationChannel()
     {
@@ -129,18 +147,32 @@ sealed class SensorPalForegroundService : Android.App.Service
     [System.Runtime.Versioning.SupportedOSPlatform("android26.0")]
     Notification BuildServiceNotification()
     {
-        var intent = new Intent(this, typeof(MainActivity));
-        intent.SetFlags(ActivityFlags.SingleTop);
-        var pending = PendingIntent.GetActivity(
-            this, 0, intent,
-            PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent);
+        var openIntent = new Intent(this, typeof(MainActivity));
+        openIntent.SetFlags(ActivityFlags.SingleTop);
+        var openPending = PendingIntent.GetActivity(
+            this, 0, openIntent,
+            PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent)!;
+
+        var stopIntent = new Intent(this, typeof(SensorPalForegroundService));
+        stopIntent.SetAction(ActionStopTracking);
+        var stopPending = PendingIntent.GetService(
+            this, 1, stopIntent,
+            PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent)!;
+
+        var stopAction = new Notification.Action.Builder(
+                Android.Graphics.Drawables.Icon.CreateWithResource(
+                    this, Android.Resource.Drawable.IcMenuCloseClearCancel),
+                "Pause notifications",
+                stopPending)
+            .Build();
 
         return new Notification.Builder(this, ChannelId)
-            .SetSmallIcon(Android.Resource.Drawable.IcDialogInfo)
+            .SetSmallIcon(Resource.Drawable.ic_notification)
             .SetContentTitle("SensorPal")
             .SetContentText("Monitoring active — tap to open")
-            .SetContentIntent(pending)
+            .SetContentIntent(openPending)
             .SetOngoing(true)
+            .AddAction(stopAction)
             .Build()!;
     }
 }

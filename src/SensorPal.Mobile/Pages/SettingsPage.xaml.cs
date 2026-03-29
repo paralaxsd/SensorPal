@@ -52,10 +52,32 @@ public partial class SettingsPage : ContentPage
     async Task LoadSettingsAsync()
     {
         // Always load local-only settings — no server call needed.
-        ServerUrlEntry.Placeholder = _client.ConfiguredBaseUrl;
-        ServerUrlEntry.Text = Preferences.Get(PreferencesKeys.ServerUrl, "");
-        NotificationsSwitch.IsToggled = _notificationService.IsEnabled;
-        ApiKeyEntry.Text = Preferences.Get(PreferencesKeys.ApiKey, "");
+        // _loading guard prevents OnNotificationsToggled from firing while we
+        // set the switch programmatically.
+        _loading = true;
+        try
+        {
+            ServerUrlEntry.Placeholder = _client.ConfiguredBaseUrl;
+            ServerUrlEntry.Text = Preferences.Get(PreferencesKeys.ServerUrl, "");
+            NotificationsSwitch.IsToggled = _notificationService.IsEnabled;
+            ApiKeyEntry.Text = Preferences.Get(PreferencesKeys.ApiKey, "");
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        if (_notificationService.IsEnabled && _notificationService.IsPaused)
+        {
+            NotificationsHintLabel.Text =
+                "Background service paused — toggle off and on to resume.";
+            NotificationsHintLabel.TextColor = Colors.OrangeRed;
+        }
+        else if (_notificationService.IsEnabled)
+        {
+            NotificationsHintLabel.Text = "Notifications enabled.";
+            NotificationsHintLabel.TextColor = Colors.Gray;
+        }
 
         // Server settings — skip if server is unreachable to avoid triggering the offline dialog.
         _serverSettingsLoaded = false;
