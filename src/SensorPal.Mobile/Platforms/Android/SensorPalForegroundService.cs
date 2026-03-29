@@ -37,7 +37,7 @@ sealed class SensorPalForegroundService : Android.App.Service
             // up any lingering noise-event notification so the drawer is empty.
             GetNotificationService()?.Pause();
             (GetSystemService(NotificationService) as NotificationManager)
-                ?.Cancel(NotificationService.EventNotificationId);
+                ?.Cancel(Services.NotificationService.EventNotificationId);
 
             StopSelf();
             return StartCommandResult.NotSticky;
