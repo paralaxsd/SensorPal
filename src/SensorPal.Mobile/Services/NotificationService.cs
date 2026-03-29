@@ -23,7 +23,7 @@ namespace SensorPal.Mobile.Services;
 public sealed class NotificationService : IDisposable
 {
     const string EnabledKey = "notifications_enabled";
-    const int EventNotificationId = 42;
+    internal const int EventNotificationId = 42;
 
     readonly SensorPalClient _client;
     readonly ILogger<NotificationService> _logger;

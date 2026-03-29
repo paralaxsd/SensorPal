@@ -19,7 +19,6 @@ sealed class SensorPalForegroundService : Android.App.Service
 {
     const string ChannelId = "sensorpal_monitoring";
     const int ServiceNotificationId = 1001;
-    const int EventNotificationId = 42; // must match NotificationService.EventNotificationId
     const string ActionStopTracking = "org.speckdrumm.sensorpal.mobile.ACTION_STOP_TRACKING";
 
     CancellationTokenSource? _cts;
@@ -38,7 +37,7 @@ sealed class SensorPalForegroundService : Android.App.Service
             // up any lingering noise-event notification so the drawer is empty.
             GetNotificationService()?.Pause();
             (GetSystemService(NotificationService) as NotificationManager)
-                ?.Cancel(EventNotificationId);
+                ?.Cancel(NotificationService.EventNotificationId);
 
             StopSelf();
             return StartCommandResult.NotSticky;
