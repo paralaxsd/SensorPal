@@ -121,30 +121,49 @@ public partial class MonitoringPage : ContentPage
     {
         var level = await _client.GetLevelAsync();
 
-        // Sync calibration state from server (handles server-restart mid-session).
-        if (_isCalibrating && level is not null && !level.IsCalibrating)
-        {
-            _isCalibrating = false;
-            UpdateToggleUi();
-        }
-
-        // Detect server-reset: server responded but is no longer monitoring.
-        // Grace period of 2s after pressing Start to let StartCaptureAsync initialize.
-        if (_isMonitoring
-            && level is not null
-            && !level.ActiveSessionStartedAt.HasValue
-            && !level.IsCalibrating
-            && DateTimeOffset.UtcNow - _monitoringStartedAt > TimeSpan.FromSeconds(2))
-        {
-            _isMonitoring = false;
-            _notificationService.OnMonitoringStopped();
-            UpdateToggleUi();
-            await LoadSessionsAsync();
-        }
+        await SyncServerStateAsync(level);
 
         AuthErrorLabel.IsVisible = _client.IsAuthError;
         UpdateNotificationsPausedLabel();
+        UpdateLevelUi(level);
 
+        // Feed level data to the notification service so Windows (which has no
+        // foreground service) can fire toast notifications from the UI poll loop.
+        await _notificationService.NotifyIfNewEventAsync(level);
+    }
+
+    // Detects every state transition regardless of which client triggered it.
+    // Grace period of 2s guards only the Monitoring→Idle direction right after *this*
+    // client pressed Start, to let AudioCaptureService initialize.
+    async Task SyncServerStateAsync(LiveLevelDto? level)
+    {
+        if (level is null) return;
+
+        var serverMonitoring = level.ActiveSessionStartedAt.HasValue;
+        var serverCalibrating = level.IsCalibrating;
+        var stateUnchanged = serverMonitoring == _isMonitoring && serverCalibrating == _isCalibrating;
+        var inGracePeriod = _isMonitoring && !serverMonitoring
+            && DateTimeOffset.UtcNow - _monitoringStartedAt <= TimeSpan.FromSeconds(2);
+
+        if (stateUnchanged || inGracePeriod) return;
+
+        var wasMonitoring = _isMonitoring;
+        _isMonitoring = serverMonitoring;
+        _isCalibrating = serverCalibrating;
+
+        if (wasMonitoring && !serverMonitoring)
+            _notificationService.OnMonitoringStopped();
+        else if (!wasMonitoring && serverMonitoring)
+            _notificationService.OnMonitoringStarted();
+
+        UpdateToggleUi();
+
+        if (!serverMonitoring)
+            await LoadSessionsAsync();
+    }
+
+    void UpdateLevelUi(LiveLevelDto? level)
+    {
         if (level?.Db is not { } db)
         {
             LevelLabel.Text = "— dBFS";
@@ -156,20 +175,20 @@ public partial class MonitoringPage : ContentPage
         }
 
         var aboveThreshold = db >= level.ThresholdDb;
-        var progress = Math.Clamp((db + 90.0) / 90.0, 0.0, 1.0);
 
         LevelLabel.Text = $"{db:F1} dBFS";
         if (aboveThreshold)
             LevelLabel.TextColor = Colors.OrangeRed;
         else
             LevelLabel.ClearValue(Label.TextColorProperty);
-        LevelBar.Progress = progress;
+
+        LevelBar.Progress = Math.Clamp((db + 90.0) / 90.0, 0.0, 1.0);
         LevelBar.ProgressColor = aboveThreshold ? Colors.OrangeRed : Colors.DodgerBlue;
         ThresholdLabel.Text = $"Threshold: {level.ThresholdDb:F1} dBFS";
 
-        if (level.IsEventActive && level.EventActiveSince.HasValue)
+        if (level.IsEventActive && level.EventActiveSince is { } since)
         {
-            var elapsed = DateTimeOffset.UtcNow - level.EventActiveSince.Value;
+            var elapsed = DateTimeOffset.UtcNow - since;
             EventActiveLabel.Text = $"⬤ Detecting event — {elapsed:mm\\:ss}";
             EventActiveLabel.IsVisible = true;
         }
@@ -178,16 +197,11 @@ public partial class MonitoringPage : ContentPage
             EventActiveLabel.IsVisible = false;
         }
 
-        if (_isMonitoring && level.ActiveSessionStartedAt.HasValue)
+        if (_isMonitoring && level.ActiveSessionStartedAt is { } sessionStart)
         {
-            var duration = DateTimeOffset.UtcNow - level.ActiveSessionStartedAt.Value;
-            DurationLabel.Text = duration.ToString(@"hh\:mm\:ss");
+            DurationLabel.Text = (DateTimeOffset.UtcNow - sessionStart).ToString(@"hh\:mm\:ss");
             EventCountLabel.Text = (level.ActiveSessionEventCount ?? 0).ToString();
         }
-
-        // Feed level data to the notification service so Windows (which has no
-        // foreground service) can fire toast notifications from the UI poll loop.
-        await _notificationService.NotifyIfNewEventAsync(level);
     }
 
     // Button visual appearances — defined once, reused across states.
